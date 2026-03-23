@@ -812,6 +812,78 @@ button {
   gap: 18px;
 }
 
+.map-card__controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+}
+
+.map-card__controls--compact {
+  grid-template-columns: 1fr;
+  justify-items: center;
+}
+
+.map-card__control-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.map-card__control-group--center {
+  justify-content: center;
+}
+
+.map-card__control-button {
+  min-height: 50px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 18px;
+  border: 1px solid rgba(31, 47, 57, 0.12);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(244, 249, 250, 0.88));
+  color: var(--text-main);
+  font-weight: 700;
+  box-shadow: 0 12px 24px rgba(22, 36, 44, 0.08);
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
+}
+
+.map-card__control-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(31, 111, 139, 0.24);
+  box-shadow: 0 16px 28px rgba(22, 36, 44, 0.12);
+}
+
+.map-card__control-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+  transform: none;
+  box-shadow: none;
+}
+
+.map-card__control-button--route {
+  justify-self: start;
+}
+
+.map-card__control-button--locate {
+  justify-self: end;
+}
+
+.map-card__control-button--nav {
+  min-width: 152px;
+}
+
+.map-card__control-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
 .map-card__canvas {
   position: relative;
   min-height: 360px;
@@ -893,27 +965,6 @@ button {
 .map-card__stop--active {
   background: var(--accent-strong);
   transform: translate(-50%, -50%) scale(1.08);
-}
-
-.map-card__floating-button {
-  min-height: 42px;
-  padding: 0 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(31, 47, 57, 0.12);
-  background: rgba(255, 255, 255, 0.9);
-  color: var(--text-main);
-  font-weight: 700;
-  box-shadow: 0 12px 24px rgba(22, 36, 44, 0.12);
-  transition:
-    transform 160ms ease,
-    box-shadow 160ms ease,
-    background 160ms ease;
-}
-
-.map-card__floating-button:hover {
-  transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.98);
-  box-shadow: 0 16px 28px rgba(22, 36, 44, 0.16);
 }
 
 .map-card__note {
@@ -1212,6 +1263,16 @@ button {
   .map-card__status-group {
     justify-content: flex-start;
   }
+
+  .map-card__controls {
+    grid-template-columns: 1fr;
+    justify-items: stretch;
+  }
+
+  .map-card__control-button--route,
+  .map-card__control-button--locate {
+    justify-self: stretch;
+  }
 }
 
 @media (max-width: 720px) {
@@ -1288,10 +1349,20 @@ button {
     height: 46px;
   }
 
-  .map-card__floating-button {
-    min-height: 40px;
-    padding-inline: 12px;
+  .map-card__control-group {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .map-card__control-button {
+    min-height: 46px;
+    width: 100%;
+    padding-inline: 14px;
     font-size: 13px;
+  }
+
+  .map-card__control-button--nav {
+    min-width: 0;
   }
 
   .map-marker__core {

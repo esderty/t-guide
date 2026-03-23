@@ -37,9 +37,9 @@ export function YandexRouteMap({
   const [routeGeometry, setRouteGeometry] = useState<YandexRouteGeometry>(
     () => createFallbackRouteGeometry(stops),
   )
-  const [routeMode, setRouteMode] = useState<'loading' | 'walking' | 'fallback'>(
-    'loading',
-  )
+  const [routeMode, setRouteMode] = useState<
+    'loading' | 'walking' | 'partial' | 'fallback'
+  >('loading')
   const [location, setLocation] = useState<MapLocationRequest>(() => ({
     bounds: getBoundsFromStops(stops),
     padding: routePadding,
@@ -55,6 +55,10 @@ export function YandexRouteMap({
 
   const selectedStop =
     stops.find((stop) => stop.id === selectedStopId) ?? stops[0] ?? null
+  const previousStop =
+    selectedStop
+      ? stops.find((stop) => stop.order === selectedStop.order - 1)
+      : undefined
   const nextStop =
     selectedStop
       ? stops.find((stop) => stop.order === selectedStop.order + 1)
@@ -140,7 +144,7 @@ export function YandexRouteMap({
         return
       }
 
-      const walkingGeometry = await buildWalkingRouteGeometry(
+      const walkingRoute = await buildWalkingRouteGeometry(
         modules.ymaps3,
         stops,
       )
@@ -149,9 +153,9 @@ export function YandexRouteMap({
         return
       }
 
-      if (walkingGeometry) {
-        setRouteGeometry(walkingGeometry)
-        setRouteMode('walking')
+      if (walkingRoute.geometry) {
+        setRouteGeometry(walkingRoute.geometry)
+        setRouteMode(walkingRoute.status)
         return
       }
 
@@ -193,6 +197,67 @@ export function YandexRouteMap({
     })
   }, [selectedStop])
 
+  function showWholeRoute() {
+    setLocation({
+      bounds: routeBounds,
+      duration: 800,
+      easing: 'ease-in-out',
+      padding: routePadding,
+    })
+  }
+
+  function goToStop(stopId?: string) {
+    if (!stopId) {
+      return
+    }
+
+    onSelect(stopId)
+  }
+
+  function showUserLocation() {
+    if (!userPosition) {
+      requestLocation()
+      return
+    }
+
+    setLocation({
+      center: toLngLat(userPosition),
+      zoom: userZoom,
+      duration: 700,
+      easing: 'ease-in-out',
+    })
+  }
+
+  const navigationControls = (
+    <div className="map-card__control-group map-card__control-group--center">
+      <button
+        aria-label="Предыдущая точка"
+        className="map-card__control-button map-card__control-button--nav"
+        disabled={!previousStop}
+        onClick={() => goToStop(previousStop?.id)}
+        type="button"
+      >
+        <span className="map-card__control-icon" aria-hidden="true">
+          ←
+        </span>
+        <span>Предыдущая</span>
+      </button>
+
+      <button
+        aria-label="Следующая точка"
+        className="map-card__control-button map-card__control-button--nav"
+        disabled={!nextStop}
+        onClick={() => goToStop(nextStop?.id)}
+        type="button"
+      >
+        <span>Следующая</span>
+        <span className="map-card__control-icon" aria-hidden="true">
+          →
+        </span>
+      </button>
+    </div>
+  )
+
   if (loadError) {
     return (
       <section className="map-card">
@@ -219,8 +284,13 @@ export function YandexRouteMap({
           onSelect={onSelect}
           routeColor={routeColor}
           selectedStopId={selectedStopId}
+          showLegend={false}
           stops={stops}
         />
+
+        <div className="map-card__controls map-card__controls--compact">
+          {navigationControls}
+        </div>
       </section>
     )
   }
@@ -232,7 +302,7 @@ export function YandexRouteMap({
           <div>
             <h2 className="map-card__title">Карта маршрута</h2>
             <p className="section-description">
-              Подключаем Яндекс Карты и строим маршрут экскурсии.
+              Подключаем Яндекс Карты и строим пешеходный маршрут по Самаре.
             </p>
           </div>
           <span className="map-status map-status--loading">Загрузка карты</span>
@@ -241,7 +311,7 @@ export function YandexRouteMap({
         <div className="map-card__canvas map-card__canvas--loading">
           <div className="map-card__loader">
             <span className="map-card__loader-ring" aria-hidden="true"></span>
-            <span>Готовим интерактивную карту Самары</span>
+            <span>Готовим интерактивную карту маршрута</span>
           </div>
         </div>
       </section>
@@ -250,8 +320,6 @@ export function YandexRouteMap({
 
   const {
     YMap,
-    YMapControl,
-    YMapControls,
     YMapDefaultFeaturesLayer,
     YMapDefaultSchemeLayer,
     YMapFeature,
@@ -264,8 +332,8 @@ export function YandexRouteMap({
         <div>
           <h2 className="map-card__title">Карта маршрута</h2>
           <p className="section-description">
-            Переключайтесь между точками, следите за своим положением и
-            проходите экскурсию в нужной последовательности.
+            Переключайтесь между точками, открывайте весь маршрут и находите себя
+            на карте во время прогулки.
           </p>
         </div>
 
@@ -276,7 +344,9 @@ export function YandexRouteMap({
             {routeMode === 'loading'
               ? 'Строим пешеходный маршрут'
               : routeMode === 'walking'
-                ? 'Пешеходный маршрут'
+                ? 'Пешеходный маршрут Яндекса'
+                : routeMode === 'partial'
+                  ? 'Маршрут частично по дорогам'
                 : 'Маршрут по точкам'}
           </span>
           <span
@@ -355,111 +425,30 @@ export function YandexRouteMap({
               </div>
             </YMapMarker>
           ) : null}
-
-          <YMapControls position="top left">
-            <YMapControl>
-              <button
-                className="map-card__floating-button"
-                onClick={() =>
-                  setLocation({
-                    bounds: routeBounds,
-                    duration: 800,
-                    easing: 'ease-in-out',
-                    padding: routePadding,
-                  })
-                }
-                type="button"
-              >
-                Весь маршрут
-              </button>
-            </YMapControl>
-            <YMapControl>
-              <button
-                className="map-card__floating-button"
-                onClick={() => {
-                  if (!selectedStop) {
-                    return
-                  }
-
-                  setLocation({
-                    center: toLngLat(selectedStop.coordinates),
-                    zoom: pointZoom,
-                    duration: 700,
-                    easing: 'ease-in-out',
-                  })
-                }}
-                type="button"
-              >
-                Активная точка
-              </button>
-            </YMapControl>
-            <YMapControl>
-              <button
-                className="map-card__floating-button"
-                onClick={() =>
-                  setLocation((currentLocation) => ({
-                    center:
-                      'center' in currentLocation
-                        ? currentLocation.center
-                        : toLngLat(selectedStop?.coordinates ?? stops[0].coordinates),
-                    zoom:
-                      'zoom' in currentLocation
-                        ? Math.min(currentLocation.zoom + 1, 18)
-                        : pointZoom + 1,
-                    duration: 220,
-                    easing: 'ease-in-out',
-                  }))
-                }
-                type="button"
-              >
-                Приблизить
-              </button>
-            </YMapControl>
-            <YMapControl>
-              <button
-                className="map-card__floating-button"
-                onClick={() =>
-                  setLocation((currentLocation) => ({
-                    center:
-                      'center' in currentLocation
-                        ? currentLocation.center
-                        : toLngLat(selectedStop?.coordinates ?? stops[0].coordinates),
-                    zoom:
-                      'zoom' in currentLocation
-                        ? Math.max(currentLocation.zoom - 1, 9)
-                        : pointZoom - 1,
-                    duration: 220,
-                    easing: 'ease-in-out',
-                  }))
-                }
-                type="button"
-              >
-                Отдалить
-              </button>
-            </YMapControl>
-            <YMapControl>
-              <button
-                className="map-card__floating-button"
-                onClick={() => {
-                  if (!userPosition) {
-                    requestLocation()
-                    return
-                  }
-
-                  setLocation({
-                    center: toLngLat(userPosition),
-                    zoom: userZoom,
-                    duration: 700,
-                    easing: 'ease-in-out',
-                  })
-                }}
-                type="button"
-              >
-                Я на карте
-              </button>
-            </YMapControl>
-          </YMapControls>
         </YMap>
+      </div>
+
+      <div className="map-card__controls">
+        <button
+          className="map-card__control-button map-card__control-button--route"
+          onClick={showWholeRoute}
+          type="button"
+        >
+          Весь маршрут
+        </button>
+
+        {navigationControls}
+
+        <button
+          className="map-card__control-button map-card__control-button--locate"
+          onClick={showUserLocation}
+          type="button"
+        >
+          <span className="map-card__control-icon" aria-hidden="true">
+            ◎
+          </span>
+          <span>Найти себя</span>
+        </button>
       </div>
 
       <div className="map-card__legend">

@@ -5,6 +5,7 @@ import { projectRouteStops } from '@/shared/lib/geo'
 
 interface RouteMapPreviewProps extends RouteMapProps {
   embedded?: boolean
+  showLegend?: boolean
   statusSlot?: ReactNode
 }
 
@@ -13,11 +14,10 @@ function RouteMapPreviewContent({
   selectedStopId,
   routeColor,
   onSelect,
+  showLegend = true,
 }: RouteMapPreviewProps) {
   const projectedStops = projectRouteStops(stops)
-  const polyline = projectedStops
-    .map((stop) => `${stop.x},${stop.y}`)
-    .join(' ')
+  const polyline = projectedStops.map((stop) => `${stop.x},${stop.y}`).join(' ')
 
   return (
     <>
@@ -50,11 +50,13 @@ function RouteMapPreviewContent({
         })}
       </div>
 
-      <div className="map-card__legend">
-        <span className="chip">Маршрут</span>
-        <span className="chip">Точки экскурсии</span>
-        <span className="chip">Активная точка</span>
-      </div>
+      {showLegend ? (
+        <div className="map-card__legend">
+          <span className="chip">Маршрут</span>
+          <span className="chip">Точки экскурсии</span>
+          <span className="chip">Активная точка</span>
+        </div>
+      ) : null}
     </>
   )
 }

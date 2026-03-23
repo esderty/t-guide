@@ -36,6 +36,11 @@ interface NearestStopResult {
   distanceMeters: number
 }
 
+export interface WalkingRouteBuildResult {
+  geometry: YandexRouteGeometry | null
+  status: 'walking' | 'partial' | 'fallback'
+}
+
 const singlePointPadding = 0.006
 
 export function toLngLat(point: GeoPoint): LngLat {
@@ -74,37 +79,89 @@ export async function buildWalkingRouteGeometry(
     }) => Promise<Array<{ toRoute?: () => { geometry?: unknown } }>>
   },
   stops: RouteStop[],
-): Promise<YandexRouteGeometry | null> {
+) : Promise<WalkingRouteBuildResult> {
   if (stops.length < 2 || !ymaps3.route) {
-    return null
+    return {
+      geometry: null,
+      status: 'fallback',
+    }
   }
 
   try {
-    const routes = await ymaps3.route({
-      type: 'walking',
-      points: stops.map((stop) => toLngLat(stop.coordinates)),
-      bounds: true,
-    })
+    const segmentGeometries = await Promise.all(
+      stops.slice(0, -1).map(async (stop, index) => {
+        const nextStop = stops[index + 1]
 
-    const geometry = routes[0]?.toRoute?.()?.geometry as
-      | YandexRouteGeometry
-      | undefined
+        try {
+          const routes = await ymaps3.route?.({
+            type: 'walking',
+            points: [toLngLat(stop.coordinates), toLngLat(nextStop.coordinates)],
+            bounds: true,
+          })
+
+          const geometry = routes?.[0]?.toRoute?.()?.geometry as
+            | YandexRouteGeometry
+            | undefined
+
+          if (!isValidRouteGeometry(geometry)) {
+            return {
+              geometry: createSegmentFallbackGeometry(stop, nextStop),
+              resolved: false,
+            }
+          }
+
+          return {
+            geometry,
+            resolved: true,
+          }
+        } catch {
+          return {
+            geometry: createSegmentFallbackGeometry(stop, nextStop),
+            resolved: false,
+          }
+        }
+      }),
+    )
+
+    const resolvedSegments = segmentGeometries.filter((segment) => segment.resolved)
+
+    if (!segmentGeometries.length) {
+      return {
+        geometry: null,
+        status: 'fallback',
+      }
+    }
+
+    const geometry = mergeSegmentGeometries(
+      segmentGeometries.map((segment) => segment.geometry),
+    )
 
     if (!geometry) {
-      return null
+      return {
+        geometry: null,
+        status: 'fallback',
+      }
     }
 
-    if (geometry.type === 'LineString' && geometry.coordinates.length) {
-      return geometry
+    if (!resolvedSegments.length) {
+      return {
+        geometry,
+        status: 'fallback',
+      }
     }
 
-    if (geometry.type === 'MultiLineString' && geometry.coordinates.length) {
-      return geometry
+    return {
+      geometry,
+      status:
+        resolvedSegments.length === segmentGeometries.length
+          ? 'walking'
+          : 'partial',
     }
-
-    return null
   } catch {
-    return null
+    return {
+      geometry: null,
+      status: 'fallback',
+    }
   }
 }
 
@@ -183,6 +240,56 @@ function getBoundsFromLngLat(points: LngLat[]): LngLatBounds {
     [Math.min(...longitudes), Math.min(...latitudes)],
     [Math.max(...longitudes), Math.max(...latitudes)],
   ]
+}
+
+function createSegmentFallbackGeometry(
+  fromStop: RouteStop,
+  toStop: RouteStop,
+): YandexRouteGeometry {
+  return {
+    type: 'LineString',
+    coordinates: [toLngLat(fromStop.coordinates), toLngLat(toStop.coordinates)],
+  }
+}
+
+function isValidRouteGeometry(
+  geometry: YandexRouteGeometry | undefined,
+): geometry is YandexRouteGeometry {
+  if (!geometry) {
+    return false
+  }
+
+  if (geometry.type === 'LineString') {
+    return geometry.coordinates.length > 1
+  }
+
+  return geometry.coordinates.some((segment) => segment.length > 1)
+}
+
+function mergeSegmentGeometries(
+  geometries: YandexRouteGeometry[],
+): YandexRouteGeometry | null {
+  const segments = geometries.flatMap((geometry) =>
+    geometry.type === 'LineString' ? [geometry.coordinates] : geometry.coordinates,
+  )
+
+  const validSegments = segments.filter((segment) => segment.length > 1)
+
+  if (!validSegments.length) {
+    return null
+  }
+
+  if (validSegments.length === 1) {
+    return {
+      type: 'LineString',
+      coordinates: validSegments[0],
+    }
+  }
+
+  return {
+    type: 'MultiLineString',
+    coordinates: validSegments,
+  }
 }
 
 function getDistanceMeters(from: GeoPoint, to: GeoPoint): number {

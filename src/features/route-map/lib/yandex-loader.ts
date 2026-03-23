@@ -8,6 +8,9 @@ type MapComponent = React.ComponentType<Record<string, unknown>>
 interface YandexMapsNamespace {
   ready?: Promise<void>
   import?: (moduleName: string) => Promise<Record<string, unknown>>
+  getDefaultConfig?: () => {
+    setApikeys?: (apikeys: { router?: string }) => void
+  }
 }
 
 interface ReactifyModule {
@@ -81,6 +84,10 @@ async function createMapsPromise(): Promise<YandexMapsModules> {
   }
 
   await ymaps3.ready
+
+  ymaps3.getDefaultConfig?.().setApikeys?.({
+    router: appMapConfig.routerApiKey || appMapConfig.apiKey,
+  })
 
   const reactifyModule = await ymaps3.import('@yandex/ymaps3-reactify')
 

@@ -4,6 +4,10 @@ export const appMapConfig = {
   provider:
     (import.meta.env.VITE_MAP_PROVIDER as MapProvider | undefined) ?? 'preview',
   apiKey: import.meta.env.VITE_YANDEX_MAPS_API_KEY ?? '',
+  routerApiKey:
+    import.meta.env.VITE_YANDEX_ROUTER_API_KEY ??
+    import.meta.env.VITE_YANDEX_MAPS_API_KEY ??
+    '',
   defaultCenter: {
     lat: 53.195873,
     lng: 50.100193,
