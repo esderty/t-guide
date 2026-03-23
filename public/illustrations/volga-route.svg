@@ -1,0 +1,23 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="800" rx="48" fill="url(#bg)"/>
+  <path d="M0 485C110 420 190 398 287 430C403 469 497 566 627 548C787 525 837 377 965 335C1055 306 1136 320 1200 352V800H0V485Z" fill="url(#river)" opacity="0.92"/>
+  <path d="M103 211C230 162 332 165 411 190C519 224 590 311 719 313C828 315 905 254 979 210C1057 164 1122 161 1200 196V352C1136 320 1055 306 965 335C837 377 787 525 627 548C497 566 403 469 287 430C190 398 110 420 0 485V293C32 265 63 242 103 211Z" fill="url(#skyline)" opacity="0.9"/>
+  <circle cx="889" cy="165" r="84" fill="#F8D98B" opacity="0.88"/>
+  <path d="M133 516C228 466 326 457 425 483C522 508 560 572 660 578C775 585 839 514 936 473C1029 434 1111 434 1200 462" stroke="#FFF5D7" stroke-width="12" stroke-linecap="round" stroke-dasharray="2 28" opacity="0.55"/>
+  <path d="M164 334L261 286L350 313L441 260L537 300L623 247L719 286L811 231L919 274L1031 218" stroke="#19354B" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/>
+  <defs>
+    <linearGradient id="bg" x1="108" y1="64" x2="1067" y2="721" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F4E8D3"/>
+      <stop offset="0.45" stop-color="#E0E7E9"/>
+      <stop offset="1" stop-color="#B8D2D6"/>
+    </linearGradient>
+    <linearGradient id="river" x1="187" y1="371" x2="1010" y2="732" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2E7398"/>
+      <stop offset="1" stop-color="#14324A"/>
+    </linearGradient>
+    <linearGradient id="skyline" x1="89" y1="110" x2="1171" y2="408" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D57958"/>
+      <stop offset="1" stop-color="#8A3B32"/>
+    </linearGradient>
+  </defs>
+</svg>
