@@ -1,73 +1,147 @@
-# React + TypeScript + Vite
+# T-Guide
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Мобильный аудиогид по Самаре на `React + TypeScript + Vite`.
 
-Currently, two official plugins are available:
+Приложение позволяет:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- посмотреть список экскурсий по Самаре;
+- отфильтровать и найти нужный маршрут;
+- открыть страницу отдельной экскурсии;
+- увидеть точки маршрута на карте;
+- открыть карточку точки;
+- просмотреть текстовое описание и блок аудиогида.
 
-## React Compiler
+## Технологии
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- `React 19`
+- `TypeScript`
+- `Vite`
+- `React Router`
+- `Yandex Maps JS API 3.0`
+- собственная UI-архитектура по слоям `app / pages / widgets / features / entities / shared`
 
-## Expanding the ESLint configuration
+## Что уже реализовано
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- липкий `header` с навигацией;
+- главная страница с общей статистикой по экскурсиям;
+- каталог экскурсий с поиском, подсказками, фильтрами и пагинацией;
+- страница отдельной экскурсии;
+- список точек маршрута;
+- карточка достопримечательности;
+- аудиопанель для точки;
+- подключение Яндекс Карт;
+- геолокация пользователя;
+- переключение между точками маршрута;
+- fallback-режим карты, если внешний API временно недоступен;
+- моковые данные для быстрого MVP без backend.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Текущее состояние карт
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+В проекте есть два режима карты:
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+1. `preview` — схематичная карта без внешнего API.
+2. `yandex` — настоящая карта Яндекса.
+
+Для Яндекс Карт используются две переменные окружения:
+
+```env
+VITE_MAP_PROVIDER=yandex
+VITE_YANDEX_MAPS_API_KEY=
+VITE_YANDEX_ROUTER_API_KEY=
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+- `VITE_YANDEX_MAPS_API_KEY` — ключ для отображения карты.
+- `VITE_YANDEX_ROUTER_API_KEY` — ключ для построения реального маршрута.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Если ключ маршрутизации недоступен или router API не отвечает, приложение показывает fallback-маршрут по точкам.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Запуск проекта
+
+Установка зависимостей:
+
+```bash
+npm install
 ```
+
+Запуск в development:
+
+```bash
+npm run dev
+```
+
+Сборка:
+
+```bash
+npm run build
+```
+
+Проверка линтером:
+
+```bash
+npm run lint
+```
+
+## Переменные окружения
+
+Пример файла находится в `.env.example`.
+
+Локально можно использовать `.env.local`:
+
+```env
+VITE_MAP_PROVIDER=yandex
+VITE_YANDEX_MAPS_API_KEY=
+VITE_YANDEX_ROUTER_API_KEY=
+VITE_API_URL=http://localhost:8080/api
+```
+
+Если `VITE_API_URL` не задан, фронтенд автоматически работает на моковых экскурсиях.
+
+## Роуты приложения
+
+- `/` — главная страница;
+- `/excursions` — каталог экскурсий;
+- `/excursions/:slug` — страница отдельной экскурсии;
+- `*` — страница 404.
+
+## Данные и backend
+
+Сейчас проект может работать в двух режимах:
+
+- `mock mode` — данные берутся из `src/entities/excursion/api/excursions.mock.ts`;
+- `api mode` — данные запрашиваются с backend через `src/shared/api/http.ts`.
+
+Переключение между режимами происходит автоматически:
+
+- если `VITE_API_URL` не задан, используются моки;
+- если `VITE_API_URL` задан, используется backend.
+
+## Структура проекта
+
+Кратко:
+
+- `src/app` — каркас приложения;
+- `src/pages` — страницы;
+- `src/widgets` — собранные блоки страниц;
+- `src/features` — интерактивные функции;
+- `src/entities` — доменные сущности;
+- `src/shared` — общие утилиты, конфиги и UI;
+- `public` — статические ресурсы;
+- `docs` — документация.
+
+Подробное описание каждого файла:
+
+- [docs/project-structure.md](./docs/project-structure.md)
+- [docs/frontend-architecture.md](./docs/frontend-architecture.md)
+
+## MVP-логика на текущий момент
+
+1. `main.tsx` монтирует React-приложение.
+2. `App.tsx` подключает `BrowserRouter`, общий layout и header.
+3. `AppRouter.tsx` раздает страницы по URL.
+4. `HomePage` и `ExcursionsPage` получают список экскурсий через `useExcursions()`.
+5. `useExcursions()` берет данные из репозитория.
+6. Репозиторий либо возвращает моки, либо ходит в backend.
+7. На странице экскурсии загружается один маршрут по `slug`.
+8. `RouteOverview` собирает карту и список точек.
+9. `YandexRouteMap` рендерит карту, точки, маршрут и геолокацию.
+10. `PlaceDetailsCard` и `AudioGuidePanel` показывают информацию по выбранной точке.
