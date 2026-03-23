@@ -1,0 +1,19 @@
+# Настройки IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.project/
+.classpath/
+
+# Системные файлы
+.DS_Store
+Thumbs.db
+
+# Docker и База данных
+db_data/
+pgdata/
+postgres_data/
+
+# Логи
+*.log
