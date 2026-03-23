@@ -3,9 +3,9 @@ version: '3.8'
 services:
   db:
     image: postgres:15-alpine
-    container_name: samara_guide_db
+    container_name: t-guide-bd
     environment:
-      - POSTGRES_DB=samara_guide
+      - POSTGRES_DB=t-guide
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
     ports:
