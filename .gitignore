@@ -5,6 +5,7 @@
 .settings/
 .project/
 .classpath/
+.env
 
 # Системные файлы
 .DS_Store

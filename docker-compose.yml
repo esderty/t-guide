@@ -3,15 +3,29 @@ version: '3.8'
 services:
   db:
     image: postgres:15-alpine
-    container_name: t-guide-bd
+    container_name: t-guide-db
     environment:
-      - POSTGRES_DB=t-guide
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=tguide
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  minio:
+    image: minio/minio
+    container_name: t-guide-minio
+    ports:
+      - "9000:9000" # API для бэкенда
+      - "9001:9001" # Консоль для просмотра данных
+    environment:
+      MINIO_ROOT_USER: ${S3_USER}
+      MINIO_ROOT_PASSWORD: ${S3_PASSWORD}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+
 volumes:
   postgres_data:
+  minio_data:
