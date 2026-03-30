@@ -2697,3 +2697,119 @@ img {
     grid-template-columns: 1fr;
   }
 }
+
+/* Route page refinement */
+.map-card__controls {
+  grid-template-columns: minmax(150px, max-content) minmax(0, 1fr) minmax(160px, max-content);
+  gap: 16px;
+}
+
+.map-card__control-group--center {
+  grid-template-columns: repeat(2, 56px);
+  justify-content: center;
+  gap: 12px;
+}
+
+.map-card__control-button--arrow {
+  width: 56px;
+  min-width: 56px;
+  height: 56px;
+  min-height: 56px;
+  padding: 0;
+  border-radius: 50%;
+  justify-self: center;
+}
+
+.map-card__control-icon--solo {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.map-card__control-button--route {
+  justify-self: start;
+}
+
+.map-card__control-button--locate {
+  justify-self: end;
+}
+
+.map-card__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.details-card {
+  gap: 22px;
+}
+
+.details-card__image {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top left, rgba(255, 226, 193, 0.26), transparent 24%),
+    linear-gradient(180deg, rgba(233, 241, 244, 0.98), rgba(222, 232, 236, 0.96));
+}
+
+.details-card__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.details-card__body {
+  gap: 20px;
+}
+
+.details-card__meta .chip,
+.audio-panel__meta .chip,
+.stop-list__meta .chip,
+.map-card__legend .chip {
+  min-height: 36px;
+  padding-inline: 13px;
+  font-size: 0.88rem;
+}
+
+.audio-panel {
+  gap: 18px;
+}
+
+.audio-panel__actions {
+  gap: 12px;
+}
+
+.audio-panel__actions .button {
+  min-height: 50px;
+}
+
+.stop-list__button {
+  justify-content: space-between;
+}
+
+.stop-list__order {
+  margin-left: 8px;
+}
+
+@media (max-width: 980px) {
+  .map-card__controls {
+    grid-template-columns: 1fr;
+  }
+
+  .map-card__control-button--route,
+  .map-card__control-button--locate {
+    justify-self: stretch;
+  }
+}
+
+@media (max-width: 720px) {
+  .map-card__control-group--center {
+    grid-template-columns: repeat(2, 52px);
+  }
+
+  .map-card__control-button--arrow {
+    width: 52px;
+    min-width: 52px;
+    height: 52px;
+    min-height: 52px;
+  }
+}

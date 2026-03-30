@@ -1,7 +1,8 @@
-﻿import type { CSSProperties } from 'react'
+import type { CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 
 import type { Excursion } from '@/entities/excursion/model/types'
+import { buildStaticPlaceImageUrl } from '@/entities/place/lib/place-images'
 import { appRoutes } from '@/shared/config/routes'
 import {
   formatDifficulty,
@@ -10,19 +11,34 @@ import {
   formatStopCount,
   formatTheme,
 } from '@/shared/lib/format'
+import { ResilientImage } from '@/shared/ui/ResilientImage'
 
 interface ExcursionCardProps {
   excursion: Excursion
 }
 
 export function ExcursionCard({ excursion }: ExcursionCardProps) {
+  const firstStop = excursion.stops[0]
+  const coverFallbacks = firstStop
+    ? [
+        buildStaticPlaceImageUrl(firstStop.coordinates, firstStop.category, 15),
+        '/illustrations/landmark-card.svg',
+      ]
+    : ['/illustrations/landmark-card.svg']
+
   return (
     <Link className="card" to={appRoutes.excursion(excursion.slug)}>
       <div
         className="card__cover card__cover--gradient"
         style={{ '--route-accent': excursion.routeColor } as CSSProperties}
       >
-        <img src={excursion.coverImageUrl} alt={excursion.title} />
+        <ResilientImage
+          alt={excursion.title}
+          fallbackSrcs={coverFallbacks}
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          src={excursion.coverImageUrl}
+        />
         <span className="card__theme-badge">{formatTheme(excursion.theme)}</span>
       </div>
 

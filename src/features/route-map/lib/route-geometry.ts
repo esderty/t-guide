@@ -1,4 +1,4 @@
-﻿import type {
+import type {
   GeoPoint,
   RouteStop,
 } from '@/entities/excursion/model/types'
@@ -41,11 +41,21 @@ export interface WalkingRouteBuildResult {
   status: 'walking' | 'partial' | 'fallback'
 }
 
+interface OsrmRouteResponse {
+  routes?: Array<{
+    geometry?: {
+      coordinates?: LngLat[]
+      type?: string
+    }
+  }>
+}
+
 const fallbackBounds: LngLatBounds = [
   [37.608423, 55.741244],
   [37.628423, 55.761244],
 ]
 const singlePointPadding = 0.006
+const osrmWalkingEndpoint = 'https://router.project-osrm.org/route/v1/foot'
 
 export function toLngLat(point: GeoPoint): LngLat {
   return [point.lng, point.lat]
@@ -173,6 +183,102 @@ export async function buildWalkingRouteGeometry(
   }
 }
 
+export async function buildOsmWalkingRouteGeometry(
+  stops: RouteStop[],
+  signal?: AbortSignal,
+): Promise<WalkingRouteBuildResult> {
+  if (stops.length < 2) {
+    return {
+      geometry: null,
+      status: 'fallback',
+    }
+  }
+
+  try {
+    const segmentGeometries = await Promise.all(
+      stops.slice(0, -1).map(async (stop, index) => {
+        const nextStop = stops[index + 1]
+
+        try {
+          const geometry = await fetchOsmWalkingSegmentGeometry(
+            stop.coordinates,
+            nextStop.coordinates,
+            signal,
+          )
+
+          if (!geometry || geometry.length < 2) {
+            return {
+              geometry: createSegmentFallbackGeometry(stop, nextStop),
+              resolved: false,
+            }
+          }
+
+          return {
+            geometry: {
+              type: 'LineString',
+              coordinates: geometry,
+            } satisfies YandexRouteGeometry,
+            resolved: true,
+          }
+        } catch (error) {
+          if (isAbortError(error)) {
+            throw error
+          }
+
+          return {
+            geometry: createSegmentFallbackGeometry(stop, nextStop),
+            resolved: false,
+          }
+        }
+      }),
+    )
+
+    const resolvedSegments = segmentGeometries.filter((segment) => segment.resolved)
+
+    if (!segmentGeometries.length) {
+      return {
+        geometry: null,
+        status: 'fallback',
+      }
+    }
+
+    const geometry = mergeSegmentGeometries(
+      segmentGeometries.map((segment) => segment.geometry),
+    )
+
+    if (!geometry) {
+      return {
+        geometry: null,
+        status: 'fallback',
+      }
+    }
+
+    if (!resolvedSegments.length) {
+      return {
+        geometry,
+        status: 'fallback',
+      }
+    }
+
+    return {
+      geometry,
+      status:
+        resolvedSegments.length === segmentGeometries.length
+          ? 'walking'
+          : 'partial',
+    }
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw error
+    }
+
+    return {
+      geometry: createFallbackRouteGeometry(stops),
+      status: 'fallback',
+    }
+  }
+}
+
 export function getNearestStop(
   stops: RouteStop[],
   userPosition: GeoPoint,
@@ -239,6 +345,43 @@ export function hexToRgba(hex: string, alpha: number): string {
   const blue = Number.parseInt(safeHex.slice(4, 6), 16)
 
   return `rgba(${red}, ${green}, ${blue}, ${alpha})`
+}
+
+async function fetchOsmWalkingSegmentGeometry(
+  from: GeoPoint,
+  to: GeoPoint,
+  signal?: AbortSignal,
+): Promise<LngLat[] | null> {
+  const params = new URLSearchParams({
+    alternatives: 'false',
+    annotations: 'false',
+    geometries: 'geojson',
+    overview: 'full',
+    steps: 'false',
+  })
+
+  const response = await fetch(
+    `${osrmWalkingEndpoint}/${from.lng},${from.lat};${to.lng},${to.lat}?${params.toString()}`,
+    {
+      headers: {
+        Accept: 'application/json',
+      },
+      signal,
+    },
+  )
+
+  if (!response.ok) {
+    throw new Error(`OSRM responded with ${response.status}`)
+  }
+
+  const payload = (await response.json()) as OsrmRouteResponse
+  const coordinates = payload.routes?.[0]?.geometry?.coordinates
+
+  if (!Array.isArray(coordinates) || coordinates.length < 2) {
+    return null
+  }
+
+  return coordinates
 }
 
 function getBoundsFromLngLat(points: LngLat[]): LngLatBounds {
@@ -312,6 +455,10 @@ function mergeSegmentGeometries(
     type: 'MultiLineString',
     coordinates: validSegments,
   }
+}
+
+function isAbortError(error: unknown) {
+  return error instanceof DOMException && error.name === 'AbortError'
 }
 
 function degreesToRadians(value: number): number {

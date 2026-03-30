@@ -1,4 +1,4 @@
-﻿import type { RouteStop } from '@/entities/excursion/model/types'
+import type { RouteStop } from '@/entities/excursion/model/types'
 import {
   formatDuration,
   formatPointCategory,
@@ -27,6 +27,7 @@ export function RouteStopList({
       <div className="stop-list__items">
         {stops.map((stop) => {
           const isActive = stop.id === selectedStopId
+          const hasRating = stop.rating > 0
 
           return (
             <button
@@ -47,7 +48,7 @@ export function RouteStopList({
               <div className="stop-list__meta">
                 <span className="chip">{stop.scheduleLabel}</span>
                 <span className="chip">Остановка {formatDuration(stop.expectedVisitMinutes)}</span>
-                <span className="chip">Рейтинг {formatRating(stop.rating)}</span>
+                {hasRating ? <span className="chip">Рейтинг {formatRating(stop.rating)}</span> : null}
               </div>
             </button>
           )

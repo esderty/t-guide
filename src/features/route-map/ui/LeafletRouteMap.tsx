@@ -1,7 +1,8 @@
-﻿import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import * as L from 'leaflet'
 
 import {
+  buildOsmWalkingRouteGeometry,
   createFallbackRouteGeometry,
   formatMeters,
   getBoundsFromGeometry,
@@ -36,8 +37,19 @@ export function LeafletRouteMap({
   const initialCenterRef = useRef(stops[0]?.coordinates ?? defaultCenter)
   const skipAutoFocusRef = useRef(true)
   const [loadError, setLoadError] = useState<string | null>(null)
-
-  const routeGeometry = useMemo(() => createFallbackRouteGeometry(stops), [stops])
+  const fallbackRouteGeometry = useMemo(() => createFallbackRouteGeometry(stops), [stops])
+  const stopsSignature = useMemo(() => stops.map((stop) => stop.id).join('|'), [stops])
+  const [resolvedRoute, setResolvedRoute] = useState<{
+    geometry: ReturnType<typeof createFallbackRouteGeometry> | null
+    signature: string
+  }>({
+    geometry: null,
+    signature: '',
+  })
+  const routeGeometry =
+    resolvedRoute.signature === stopsSignature && resolvedRoute.geometry
+      ? resolvedRoute.geometry
+      : fallbackRouteGeometry
   const routeBounds = useMemo(() => getBoundsFromGeometry(routeGeometry), [routeGeometry])
 
   const {
@@ -89,6 +101,35 @@ export function LeafletRouteMap({
       mapRef.current = null
     }
   }, [])
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    async function loadWalkingRoute() {
+      try {
+        const result = await buildOsmWalkingRouteGeometry(stops, controller.signal)
+
+        if (controller.signal.aborted || !result.geometry) {
+          return
+        }
+
+        setResolvedRoute({
+          geometry: result.geometry,
+          signature: stopsSignature,
+        })
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          console.error(error)
+        }
+      }
+    }
+
+    loadWalkingRoute()
+
+    return () => {
+      controller.abort()
+    }
+  }, [stops, stopsSignature])
 
   useEffect(() => {
     const map = mapRef.current
@@ -200,26 +241,24 @@ export function LeafletRouteMap({
     <div className="map-card__control-group map-card__control-group--center">
       <button
         aria-label="Предыдущая точка"
-        className="map-card__control-button map-card__control-button--nav"
+        className="map-card__control-button map-card__control-button--arrow"
         disabled={!previousStop}
         onClick={() => goToStop(previousStop?.id)}
         type="button"
       >
-        <span className="map-card__control-icon" aria-hidden="true">
+        <span className="map-card__control-icon map-card__control-icon--solo" aria-hidden="true">
           ←
         </span>
-        <span>Предыдущая</span>
       </button>
 
       <button
         aria-label="Следующая точка"
-        className="map-card__control-button map-card__control-button--nav"
+        className="map-card__control-button map-card__control-button--arrow"
         disabled={!nextStop}
         onClick={() => goToStop(nextStop?.id)}
         type="button"
       >
-        <span>Следующая</span>
-        <span className="map-card__control-icon" aria-hidden="true">
+        <span className="map-card__control-icon map-card__control-icon--solo" aria-hidden="true">
           →
         </span>
       </button>
