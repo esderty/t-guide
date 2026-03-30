@@ -1,192 +1,127 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 
+import { useDiscoveryRoutes } from '@/entities/excursion/model/useDiscoveryRoutes'
+import type { ExcursionTheme } from '@/entities/excursion/model/types'
+import { getStoredDiscoveryContext } from '@/shared/lib/discovery-context'
 import {
-  defaultExcursionFilters,
-  filterExcursions,
-  getExcursionQuerySuggestion,
-  hasActiveExcursionFilters,
-  paginateItems,
-} from '@/entities/excursion/lib/excursion-utils'
-import { useExcursions } from '@/entities/excursion/model/useExcursions'
+  formatDistance,
+  formatDuration,
+  formatTheme,
+} from '@/shared/lib/format'
 import { ExcursionCatalog } from '@/widgets/excursion-catalog/ui/ExcursionCatalog'
-import { ExcursionFiltersPanel } from '@/features/excursion-filters/ui/ExcursionFiltersPanel'
-import { runViewTransition } from '@/shared/lib/view-transition'
-import { Pagination } from '@/shared/ui/Pagination'
 
-const pageSize = 6
+const themeOptions: Array<ExcursionTheme | 'all'> = [
+  'all',
+  'walk',
+  'food',
+  'nature',
+  'fun',
+  'mixed',
+]
+const durationOptions = [30, 45, 60, 90, 120]
 
 export function ExcursionsPage() {
-  const { excursions, loading, error } = useExcursions()
-  const [filters, setFilters] = useState(defaultExcursionFilters)
-  const [page, setPage] = useState(1)
-  const [catalogMinHeight, setCatalogMinHeight] = useState(0)
-  const catalogContentRef = useRef<HTMLDivElement | null>(null)
-  const deferredFilters = useDeferredValue(filters)
+  const storedContext = useMemo(() => getStoredDiscoveryContext(), [])
+  const [activeTheme, setActiveTheme] = useState<ExcursionTheme | 'all'>('all')
+  const [maxDuration, setMaxDuration] = useState<number | null>(null)
 
-  function handleFiltersChange(nextFilters: typeof defaultExcursionFilters) {
-    runViewTransition(() => {
-      setFilters(nextFilters)
-      setPage(1)
-    })
-  }
+  const { excursions, isLoading } = useDiscoveryRoutes({
+    activePointCategory: storedContext.activePointCategory,
+    center: storedContext.center,
+    locale: storedContext.locale,
+    radiusMeters: storedContext.radiusMeters,
+  })
 
-  const filteredExcursions = filterExcursions(excursions, deferredFilters)
-  const totalPages = Math.max(1, Math.ceil(filteredExcursions.length / pageSize))
-  const safePage = Math.min(page, totalPages)
-  const paginatedExcursions = paginateItems(
-    filteredExcursions,
-    safePage,
-    pageSize,
+  const filteredRoutes = useMemo(
+    () =>
+      excursions.filter((excursion) => {
+        const matchesTheme = activeTheme === 'all' || excursion.theme === activeTheme
+        const matchesDuration = maxDuration === null || excursion.durationMinutes <= maxDuration
+
+        return matchesTheme && matchesDuration
+      }),
+    [activeTheme, excursions, maxDuration],
   )
-  const districts = useMemo(
-    () => [...new Set(excursions.map((excursion) => excursion.district))],
-    [excursions],
+
+  const totalDistance = filteredRoutes.reduce(
+    (distance, excursion) => distance + excursion.distanceKm,
+    0,
   )
-  const querySuggestion = getExcursionQuerySuggestion(excursions, filters.query)
-  const showReset = hasActiveExcursionFilters(filters)
-  const catalogMotionKey = [
-    safePage,
-    deferredFilters.query,
-    deferredFilters.theme,
-    deferredFilters.district,
-    deferredFilters.difficulty,
-    deferredFilters.maxDistance,
-    deferredFilters.maxDuration,
-    deferredFilters.sortBy,
-  ].join('|')
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
-    }
-
-    const node = catalogContentRef.current
-
-    if (!node) {
-      return
-    }
-
-    const compactViewport = window.matchMedia('(max-width: 720px)')
-
-    function syncHeight(nextHeight: number) {
-      if (compactViewport.matches) {
-        setCatalogMinHeight(0)
-        return
-      }
-
-      setCatalogMinHeight((currentHeight) =>
-        Math.max(currentHeight, Math.ceil(nextHeight)),
-      )
-    }
-
-    syncHeight(node.getBoundingClientRect().height)
-
-    if (typeof ResizeObserver === 'undefined') {
-      return
-    }
-
-    const resizeObserver = new ResizeObserver((entries) => {
-      const entry = entries[0]
-
-      if (entry) {
-        syncHeight(entry.contentRect.height)
-      }
-    })
-
-    const handleViewportChange = () => {
-      if (compactViewport.matches) {
-        setCatalogMinHeight(0)
-        return
-      }
-
-      syncHeight(node.getBoundingClientRect().height)
-    }
-
-    resizeObserver.observe(node)
-    compactViewport.addEventListener('change', handleViewportChange)
-
-    return () => {
-      resizeObserver.disconnect()
-      compactViewport.removeEventListener('change', handleViewportChange)
-    }
-  }, [catalogMotionKey])
 
   return (
     <section className="page">
-      <article className="page-banner">
+      <article className="page-banner page-banner--compact">
         <div>
-          <p className="eyebrow">Экскурсии</p>
-          <h1 className="page-title">Каталог маршрутов по Самаре</h1>
+          <h1 className="page-title">Все маршруты рядом</h1>
           <p className="page-description">
-            Выберите прогулку по времени, длине маршрута, теме и количеству
-            точек.
+            Собранные прогулки по текущему району: короткие, насыщенные, спокойные и смешанные.
           </p>
         </div>
+
         <div className="page-banner__stats">
           <div className="hero-stat">
-            <span className="hero-stat__value">{excursions.length}</span>
-            <span className="hero-stat__label">Всего маршрутов</span>
+            <span className="hero-stat__value">{filteredRoutes.length}</span>
+            <span className="hero-stat__label">Маршрутов сейчас</span>
           </div>
           <div className="hero-stat">
-            <span className="hero-stat__value">{filteredExcursions.length}</span>
-            <span className="hero-stat__label">Подходят сейчас</span>
+            <span className="hero-stat__value">{formatDistance(totalDistance)}</span>
+            <span className="hero-stat__label">Суммарная длина</span>
+          </div>
+          <div className="hero-stat">
+            <span className="hero-stat__value">{storedContext.radiusMeters / 1000} км</span>
+            <span className="hero-stat__label">Текущий радиус</span>
           </div>
         </div>
       </article>
 
-      <ExcursionFiltersPanel
-        districts={districts}
-        filters={filters}
-        onChange={handleFiltersChange}
-        onReset={() => {
-          runViewTransition(() => {
-            setFilters(defaultExcursionFilters)
-            setPage(1)
-          })
-        }}
-        querySuggestion={querySuggestion}
-        resultCount={filteredExcursions.length}
-        showReset={showReset}
-      />
+      <section className="page-section page-section--tight">
+        <div className="filter-stack">
+          <div className="filter-row filter-row--wrap">
+            {themeOptions.map((theme) => (
+              <button
+                className={`filter-pill${activeTheme === theme ? ' filter-pill--active' : ''}`}
+                key={theme}
+                onClick={() => setActiveTheme(theme)}
+                type="button"
+              >
+                {theme === 'all' ? 'Все маршруты' : formatTheme(theme)}
+              </button>
+            ))}
+          </div>
 
-      {loading ? (
+          <div className="filter-row filter-row--wrap">
+            <button
+              className={`filter-pill${maxDuration === null ? ' filter-pill--active' : ''}`}
+              onClick={() => setMaxDuration(null)}
+              type="button"
+            >
+              Любое время
+            </button>
+            {durationOptions.map((duration) => (
+              <button
+                className={`filter-pill${maxDuration === duration ? ' filter-pill--active' : ''}`}
+                key={duration}
+                onClick={() => setMaxDuration(duration)}
+                type="button"
+              >
+                До {formatDuration(duration)}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {isLoading ? (
         <section className="status-card">
-          <h2 className="status-card__title">Загружаем экскурсии</h2>
-          <p className="status-card__text">Подождите немного, каталог загружается.</p>
-        </section>
-      ) : error ? (
-        <section className="status-card">
-          <h2 className="status-card__title">Не удалось показать каталог</h2>
-          <p className="status-card__text">{error}</p>
+          <h3 className="status-card__title">Подбираем маршруты</h3>
+          <p className="status-card__text">Собираем прогулки рядом с вами.</p>
         </section>
       ) : (
-        <div className="catalog-stage">
-          <div
-            className="catalog-stage__content"
-            key={catalogMotionKey}
-            ref={catalogContentRef}
-            style={
-              catalogMinHeight
-                ? { minHeight: `${catalogMinHeight}px` }
-                : undefined
-            }
-          >
-            <ExcursionCatalog
-              emptyDescription="Попробуйте изменить запрос или параметры фильтрации."
-              emptyTitle="Экскурсии не найдены"
-              excursions={paginatedExcursions}
-            />
-          </div>
-          <Pagination
-            onChange={(nextPage) => {
-              runViewTransition(() => {
-                setPage(nextPage)
-              })
-            }}
-            page={safePage}
-            totalPages={totalPages}
-          />
-        </div>
+        <ExcursionCatalog
+          emptyDescription="Попробуйте ослабить фильтр по времени или выбрать другой тип маршрута."
+          emptyTitle="Маршруты по текущим условиям пока не найдены"
+          excursions={filteredRoutes}
+        />
       )}
     </section>
   )

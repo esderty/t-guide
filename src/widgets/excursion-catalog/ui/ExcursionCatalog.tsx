@@ -1,4 +1,4 @@
-import type { Excursion } from '@/entities/excursion/model/types'
+﻿import type { Excursion } from '@/entities/excursion/model/types'
 import { ExcursionCard } from '@/entities/excursion/ui/ExcursionCard'
 
 interface ExcursionCatalogProps {
@@ -9,8 +9,8 @@ interface ExcursionCatalogProps {
 
 export function ExcursionCatalog({
   excursions,
-  emptyTitle = 'Экскурсии пока недоступны',
-  emptyDescription = 'Новые маршруты появятся здесь немного позже.',
+  emptyTitle = 'Маршруты пока не найдены',
+  emptyDescription = 'Попробуйте сменить категорию или время прогулки.',
 }: ExcursionCatalogProps) {
   if (!excursions.length) {
     return (

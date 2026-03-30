@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   Excursion,
   ExcursionDifficulty,
   ExcursionTheme,
@@ -62,14 +62,17 @@ export function filterExcursions(
   excursions: Excursion[],
   filters: ExcursionFilters,
 ): Excursion[] {
-  const normalizedQuery = filters.query.trim().toLowerCase()
+  const normalizedQuery = normalizeSearchToken(filters.query)
 
   const filtered = excursions.filter((excursion) => {
     const matchesQuery =
       !normalizedQuery ||
       excursion.title.toLowerCase().includes(normalizedQuery) ||
-      excursion.stops.some((stop) =>
-        stop.title.toLowerCase().includes(normalizedQuery),
+      excursion.tagline.toLowerCase().includes(normalizedQuery) ||
+      excursion.stops.some(
+        (stop) =>
+          stop.title.toLowerCase().includes(normalizedQuery) ||
+          stop.shortDescription.toLowerCase().includes(normalizedQuery),
       )
 
     const matchesTheme =

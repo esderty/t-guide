@@ -1,5 +1,9 @@
-import type { RouteStop } from '@/entities/excursion/model/types'
-import { formatCoordinates, formatDuration } from '@/shared/lib/format'
+﻿import type { RouteStop } from '@/entities/excursion/model/types'
+import {
+  formatDuration,
+  formatPointCategory,
+  formatRating,
+} from '@/shared/lib/format'
 
 interface RouteStopListProps {
   stops: RouteStop[]
@@ -17,7 +21,6 @@ export function RouteStopList({
       <div className="section-heading">
         <div>
           <h2 className="section-title">Точки маршрута</h2>
-          <p className="section-description">Выберите место, чтобы открыть его карточку.</p>
         </div>
       </div>
 
@@ -34,6 +37,7 @@ export function RouteStopList({
             >
               <div className="stop-list__title-row">
                 <div>
+                  <p className="eyebrow">{formatPointCategory(stop.category)}</p>
                   <h3 className="stop-list__title">{stop.title}</h3>
                   <p className="stop-list__summary">{stop.shortDescription}</p>
                 </div>
@@ -41,13 +45,9 @@ export function RouteStopList({
               </div>
 
               <div className="stop-list__meta">
-                <span className="chip">{formatCoordinates(stop.coordinates)}</span>
-                <span className="chip">
-                  На точку {formatDuration(stop.expectedVisitMinutes)}
-                </span>
-                <span className="chip">
-                  Аудио {formatDuration(Math.ceil(stop.audio.durationSeconds / 60))}
-                </span>
+                <span className="chip">{stop.scheduleLabel}</span>
+                <span className="chip">Остановка {formatDuration(stop.expectedVisitMinutes)}</span>
+                <span className="chip">Рейтинг {formatRating(stop.rating)}</span>
               </div>
             </button>
           )

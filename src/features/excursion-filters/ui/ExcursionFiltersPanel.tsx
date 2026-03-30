@@ -1,4 +1,4 @@
-import type { ExcursionFilters } from '@/entities/excursion/lib/excursion-utils'
+﻿import type { ExcursionFilters } from '@/entities/excursion/lib/excursion-utils'
 import type { ExcursionTheme } from '@/entities/excursion/model/types'
 import { formatTheme } from '@/shared/lib/format'
 import { SearchSuggestInput } from '@/shared/ui/SearchSuggestInput'
@@ -15,14 +15,11 @@ interface ExcursionFiltersPanelProps {
 }
 
 const themeOptionsRaw: ExcursionTheme[] = [
-  'history',
-  'architecture',
-  'waterfront',
-  'culture',
-  'panoramas',
-  'legends',
-  'family',
-  'modernism',
+  'walk',
+  'food',
+  'nature',
+  'fun',
+  'mixed',
 ]
 
 export function ExcursionFiltersPanel({
@@ -35,7 +32,7 @@ export function ExcursionFiltersPanel({
   onReset,
 }: ExcursionFiltersPanelProps) {
   const themeOptions: SelectMenuOption<ExcursionFilters['theme']>[] = [
-    { value: 'all', label: 'Все темы' },
+    { value: 'all', label: 'Все категории' },
     ...themeOptionsRaw.map((theme) => ({
       value: theme,
       label: formatTheme(theme),
@@ -43,7 +40,7 @@ export function ExcursionFiltersPanel({
   ]
 
   const districtOptions: SelectMenuOption<ExcursionFilters['district']>[] = [
-    { value: 'all', label: 'Все районы' },
+    { value: 'all', label: 'Любая зона' },
     ...districts.map((district) => ({
       value: district,
       label: district,
@@ -51,28 +48,27 @@ export function ExcursionFiltersPanel({
   ]
 
   const difficultyOptions: SelectMenuOption<ExcursionFilters['difficulty']>[] = [
-    { value: 'all', label: 'Любая сложность' },
+    { value: 'all', label: 'Любой темп' },
     { value: 'easy', label: 'Легко' },
     { value: 'medium', label: 'Средне' },
-    { value: 'hard', label: 'Сложно' },
+    { value: 'hard', label: 'Насыщенно' },
   ]
 
   const distanceOptions: SelectMenuOption<string>[] = [
     { value: '', label: 'Любая длина' },
-    { value: '3', label: 'До 3 км' },
+    { value: '1.5', label: 'До 1,5 км' },
+    { value: '2.5', label: 'До 2,5 км' },
     { value: '4', label: 'До 4 км' },
-    { value: '5', label: 'До 5 км' },
     { value: '6', label: 'До 6 км' },
-    { value: '8', label: 'До 8 км' },
   ]
 
   const durationOptions: SelectMenuOption<string>[] = [
     { value: '', label: 'Любая длительность' },
+    { value: '30', label: 'До 30 мин' },
+    { value: '45', label: 'До 45 мин' },
     { value: '60', label: 'До 1 часа' },
     { value: '90', label: 'До 1,5 часов' },
     { value: '120', label: 'До 2 часов' },
-    { value: '150', label: 'До 2,5 часов' },
-    { value: '180', label: 'До 3 часов' },
   ]
 
   const sortOptions: SelectMenuOption<ExcursionFilters['sortBy']>[] = [
@@ -88,7 +84,7 @@ export function ExcursionFiltersPanel({
         <div>
           <h2 className="section-title">Поиск и фильтры</h2>
           <p className="section-description">
-            Подберите маршрут по названию, точкам, времени и длине прогулки.
+            Подберите маршрут по названию, типу, времени и длине прогулки.
           </p>
         </div>
       </div>
@@ -107,14 +103,14 @@ export function ExcursionFiltersPanel({
             query,
           })
         }
-        placeholder="Название экскурсии или точки маршрута"
+        placeholder="Название маршрута или точки"
         suggestion={querySuggestion}
         value={filters.query}
       />
 
       <div className="filters-grid">
         <SelectMenu
-          label="Тема"
+          label="Категория"
           onChange={(theme) =>
             onChange({
               ...filters,
@@ -126,7 +122,7 @@ export function ExcursionFiltersPanel({
         />
 
         <SelectMenu
-          label="Район"
+          label="Зона"
           onChange={(district) =>
             onChange({
               ...filters,
@@ -138,7 +134,7 @@ export function ExcursionFiltersPanel({
         />
 
         <SelectMenu
-          label="Сложность"
+          label="Темп"
           onChange={(difficulty) =>
             onChange({
               ...filters,

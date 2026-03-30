@@ -1,5 +1,8 @@
-import type { RouteStop } from '@/entities/excursion/model/types'
-import { formatDuration } from '@/shared/lib/format'
+﻿import type { RouteStop } from '@/entities/excursion/model/types'
+import {
+  formatDuration,
+  formatLocaleLabel,
+} from '@/shared/lib/format'
 
 interface AudioGuidePanelProps {
   stop: RouteStop
@@ -27,18 +30,20 @@ export function AudioGuidePanel({
         <span className="chip">
           Длительность {formatDuration(Math.ceil(stop.audio.durationSeconds / 60))}
         </span>
-        <span className="chip">Язык: Русский</span>
+        <span className="chip">Язык {formatLocaleLabel(stop.audio.language)}</span>
       </div>
 
       {audioIsReady ? (
         <audio controls preload="metadata" src={stop.audio.url ?? undefined} />
       ) : (
-        <p className="status-card__text">Аудио для этой точки пока недоступно.</p>
+        <p className="audio-panel__placeholder">
+          Озвучка для этой точки появится здесь.
+        </p>
       )}
 
       <div className="audio-panel__actions">
         <button className="button button--primary" disabled={!audioIsReady} type="button">
-          Воспроизвести аудио
+          Запустить аудиогид
         </button>
         <button
           className="button button--secondary"

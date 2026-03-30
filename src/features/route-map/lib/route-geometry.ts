@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   GeoPoint,
   RouteStop,
 } from '@/entities/excursion/model/types'
@@ -41,6 +41,10 @@ export interface WalkingRouteBuildResult {
   status: 'walking' | 'partial' | 'fallback'
 }
 
+const fallbackBounds: LngLatBounds = [
+  [37.608423, 55.741244],
+  [37.628423, 55.761244],
+]
 const singlePointPadding = 0.006
 
 export function toLngLat(point: GeoPoint): LngLat {
@@ -48,7 +52,11 @@ export function toLngLat(point: GeoPoint): LngLat {
 }
 
 export function getBoundsFromStops(stops: RouteStop[]): LngLatBounds {
-  return getBoundsFromLngLat(stops.map((stop) => toLngLat(stop.coordinates)))
+  return getBoundsFromPoints(stops.map((stop) => stop.coordinates))
+}
+
+export function getBoundsFromPoints(points: GeoPoint[]): LngLatBounds {
+  return getBoundsFromLngLat(points.map((point) => toLngLat(point)))
 }
 
 export function getBoundsFromGeometry(
@@ -79,7 +87,7 @@ export async function buildWalkingRouteGeometry(
     }) => Promise<Array<{ toRoute?: () => { geometry?: unknown } }>>
   },
   stops: RouteStop[],
-) : Promise<WalkingRouteBuildResult> {
+): Promise<WalkingRouteBuildResult> {
   if (stops.length < 2 || !ymaps3.route) {
     return {
       geometry: null,
@@ -173,7 +181,7 @@ export function getNearestStop(
   let minDistance = Number.POSITIVE_INFINITY
 
   for (const stop of stops) {
-    const distance = getDistanceMeters(stop.coordinates, userPosition)
+    const distance = getDistanceMetersBetween(stop.coordinates, userPosition)
 
     if (distance < minDistance) {
       minDistance = distance
@@ -189,6 +197,23 @@ export function getNearestStop(
     stop: nearestStop,
     distanceMeters: minDistance,
   }
+}
+
+export function getDistanceMetersBetween(from: GeoPoint, to: GeoPoint): number {
+  const earthRadius = 6371000
+  const fromLat = degreesToRadians(from.lat)
+  const toLat = degreesToRadians(to.lat)
+  const deltaLat = degreesToRadians(to.lat - from.lat)
+  const deltaLng = degreesToRadians(to.lng - from.lng)
+
+  const haversine =
+    Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+    Math.cos(fromLat) *
+      Math.cos(toLat) *
+      Math.sin(deltaLng / 2) *
+      Math.sin(deltaLng / 2)
+
+  return 2 * earthRadius * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine))
 }
 
 export function formatMeters(value: number): string {
@@ -218,10 +243,7 @@ export function hexToRgba(hex: string, alpha: number): string {
 
 function getBoundsFromLngLat(points: LngLat[]): LngLatBounds {
   if (!points.length) {
-    return [
-      [50.090193, 53.185873],
-      [50.110193, 53.205873],
-    ]
+    return fallbackBounds
   }
 
   if (points.length === 1) {
@@ -290,23 +312,6 @@ function mergeSegmentGeometries(
     type: 'MultiLineString',
     coordinates: validSegments,
   }
-}
-
-function getDistanceMeters(from: GeoPoint, to: GeoPoint): number {
-  const earthRadius = 6371000
-  const fromLat = degreesToRadians(from.lat)
-  const toLat = degreesToRadians(to.lat)
-  const deltaLat = degreesToRadians(to.lat - from.lat)
-  const deltaLng = degreesToRadians(to.lng - from.lng)
-
-  const haversine =
-    Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
-    Math.cos(fromLat) *
-      Math.cos(toLat) *
-      Math.sin(deltaLng / 2) *
-      Math.sin(deltaLng / 2)
-
-  return 2 * earthRadius * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine))
 }
 
 function degreesToRadians(value: number): number {

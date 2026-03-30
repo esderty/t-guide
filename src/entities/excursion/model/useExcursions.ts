@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 
 import { getExcursions } from '@/entities/excursion/api/excursions.repository'
 import type { Excursion } from '@/entities/excursion/model/types'
@@ -25,7 +25,7 @@ export function useExcursions() {
         setExcursions(nextExcursions)
       } catch {
         if (isActive) {
-          setError('Не удалось загрузить экскурсии.')
+          setError('Не удалось загрузить маршруты.')
         }
       } finally {
         if (isActive) {

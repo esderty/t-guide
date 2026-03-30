@@ -1,6 +1,6 @@
-import type { GeoPoint, RouteStop } from '@/entities/excursion/model/types'
+﻿import type { GeoPoint, RouteStop } from '@/entities/excursion/model/types'
 
-export type MapProvider = 'preview' | 'yandex'
+export type MapProvider = 'preview' | 'osm'
 
 export interface RouteMapProps {
   stops: RouteStop[]

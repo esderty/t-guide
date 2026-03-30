@@ -1,14 +1,12 @@
-export type SupportedLocale = 'ru'
+﻿export type SupportedLocale = 'ru' | 'en' | 'de' | 'fr' | 'es'
 export type ExcursionDifficulty = 'easy' | 'medium' | 'hard'
-export type ExcursionTheme =
-  | 'history'
-  | 'architecture'
-  | 'waterfront'
-  | 'culture'
-  | 'panoramas'
-  | 'legends'
-  | 'family'
-  | 'modernism'
+export type ExcursionTheme = 'walk' | 'food' | 'nature' | 'fun' | 'mixed'
+export type PointCategory =
+  | 'museum'
+  | 'food'
+  | 'park'
+  | 'entertainment'
+  | 'landmark'
 
 export interface GeoPoint {
   lat: number
@@ -27,12 +25,32 @@ export interface RouteStop {
   id: string
   order: number
   title: string
+  category: PointCategory
   shortDescription: string
   description: string
   coordinates: GeoPoint
   imageUrl: string
   expectedVisitMinutes: number
+  rating: number
+  scheduleLabel: string
   audio: AudioStory
+}
+
+export interface NearbyPoint {
+  id: string
+  title: string
+  category: PointCategory
+  shortDescription: string
+  description: string
+  coordinates: GeoPoint
+  imageUrl: string
+  expectedVisitMinutes: number
+  rating: number
+  scheduleLabel: string
+  distanceMeters: number
+  addressLabel?: string
+  googleMapsUrl?: string
+  source?: 'mock' | 'osm'
 }
 
 export interface Excursion {
@@ -51,5 +69,6 @@ export interface Excursion {
   coverImageUrl: string
   routeColor: string
   difficulty: ExcursionDifficulty
+  audienceLabel: string
   stops: RouteStop[]
 }

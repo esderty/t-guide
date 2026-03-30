@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+﻿import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { GeoPoint } from '@/entities/excursion/model/types'
 
-type GeolocationStatus =
+export type GeolocationStatus =
   | 'idle'
   | 'tracking'
   | 'blocked'
@@ -37,7 +37,7 @@ export function useUserGeolocation(): UseUserGeolocationResult {
       return null
     }
 
-    return 'Браузер не поддерживает геолокацию.'
+    return 'Браузер не поддерживает геопозицию.'
   })
 
   const stopWatching = useCallback(() => {
@@ -47,39 +47,46 @@ export function useUserGeolocation(): UseUserGeolocationResult {
     }
   }, [])
 
-  const requestLocation = useCallback(() => {
+  const handlePosition = useCallback((position: GeolocationPosition) => {
+    setUserPosition({
+      lat: position.coords.latitude,
+      lng: position.coords.longitude,
+    })
+    setStatus('tracking')
+    setError(null)
+  }, [])
+
+  const handleGeolocationError = useCallback((geolocationError: GeolocationPositionError) => {
+    setStatus('blocked')
+
+    if (geolocationError.code === geolocationError.PERMISSION_DENIED) {
+      setError('Доступ к геопозиции отключен. Можно продолжить с картой по умолчанию.')
+      return
+    }
+
+    setError('Не удалось определить текущее местоположение.')
+  }, [])
+
+  const startWatching = useCallback(() => {
     if (typeof window === 'undefined' || !navigator.geolocation) {
       setStatus('unsupported')
-      setError('Браузер не поддерживает геолокацию.')
+      setError('Браузер не поддерживает геопозицию.')
       return
     }
 
     stopWatching()
-    setStatus('loading')
-    setError(null)
-
     watchIdRef.current = navigator.geolocation.watchPosition(
-      (position) => {
-        setUserPosition({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        })
-        setStatus('tracking')
-        setError(null)
-      },
-      (geolocationError) => {
-        setStatus('blocked')
-
-        if (geolocationError.code === geolocationError.PERMISSION_DENIED) {
-          setError('Доступ к геопозиции отключен.')
-          return
-        }
-
-        setError('Не удалось определить текущее местоположение.')
-      },
+      handlePosition,
+      handleGeolocationError,
       geolocationOptions,
     )
-  }, [stopWatching])
+  }, [handleGeolocationError, handlePosition, stopWatching])
+
+  const requestLocation = useCallback(() => {
+    setStatus('loading')
+    setError(null)
+    startWatching()
+  }, [startWatching])
 
   useEffect(() => {
     if (typeof window === 'undefined' || !navigator.geolocation) {
@@ -87,33 +94,16 @@ export function useUserGeolocation(): UseUserGeolocationResult {
     }
 
     stopWatching()
-
     watchIdRef.current = navigator.geolocation.watchPosition(
-      (position) => {
-        setUserPosition({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        })
-        setStatus('tracking')
-        setError(null)
-      },
-      (geolocationError) => {
-        setStatus('blocked')
-
-        if (geolocationError.code === geolocationError.PERMISSION_DENIED) {
-          setError('Доступ к геопозиции отключен.')
-          return
-        }
-
-        setError('Не удалось определить текущее местоположение.')
-      },
+      handlePosition,
+      handleGeolocationError,
       geolocationOptions,
     )
 
     return () => {
       stopWatching()
     }
-  }, [stopWatching])
+  }, [handleGeolocationError, handlePosition, stopWatching])
 
   return {
     error,

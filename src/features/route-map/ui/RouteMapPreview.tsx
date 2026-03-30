@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+﻿import type { ReactNode } from 'react'
 
 import type { RouteMapProps } from '@/features/route-map/model/types'
 import { projectRouteStops } from '@/shared/lib/geo'
@@ -53,7 +53,7 @@ function RouteMapPreviewContent({
       {showLegend ? (
         <div className="map-card__legend">
           <span className="chip">Маршрут</span>
-          <span className="chip">Точки экскурсии</span>
+          <span className="chip">Точки прогулки</span>
           <span className="chip">Активная точка</span>
         </div>
       ) : null}
