@@ -1,4 +1,4 @@
-﻿import * as L from 'leaflet'
+import * as L from 'leaflet'
 
 import type {
   GeoPoint,
@@ -91,9 +91,10 @@ export function toLeafletPolylineSegments(
 export function createPoiIcon(point: NearbyPoint, isActive: boolean) {
   return L.divIcon({
     className: emptyDivIconClassName,
-    html: `<div class="poi-marker poi-marker--${point.category}${isActive ? ' poi-marker--active' : ''}"><span aria-hidden="true">${getCategoryIcon(point.category)}</span></div>`,
-    iconSize: [44, 44],
-    iconAnchor: [22, 22],
+    html: `<div class="poi-marker${isActive ? ' poi-marker--active' : ''}"><span class="poi-marker__glyph poi-marker__glyph--${point.category}" aria-hidden="true">${getCategoryIcon(point.category)}</span></div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 24],
+    popupAnchor: [0, -20],
   })
 }
 
@@ -166,6 +167,24 @@ export function buildMarkerTitle(point: { title: string; shortDescription?: stri
   return point.shortDescription ? `${point.title}\n${point.shortDescription}` : point.title
 }
 
+export function getPointCategoryIcon(category: NearbyPoint['category'] | 'all') {
+  switch (category) {
+    case 'museum':
+      return '🏛'
+    case 'food':
+      return '🍽'
+    case 'park':
+      return '🌿'
+    case 'entertainment':
+      return '✨'
+    case 'landmark':
+      return '📍'
+    case 'all':
+    default:
+      return '◎'
+  }
+}
+
 function toLeafletDuration(duration?: number) {
   if (!duration) {
     return undefined
@@ -175,19 +194,5 @@ function toLeafletDuration(duration?: number) {
 }
 
 function getCategoryIcon(category: NearbyPoint['category']) {
-  switch (category) {
-    case 'museum':
-      return '&#127963;'
-    case 'food':
-      return '&#127869;'
-    case 'park':
-      return '&#127807;'
-    case 'entertainment':
-      return '&#10024;'
-    case 'landmark':
-      return '&#128205;'
-    default:
-      return '&bull;'
-  }
+  return getPointCategoryIcon(category)
 }
-

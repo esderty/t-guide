@@ -7,7 +7,7 @@ export function resolveNearbyPointImageUrl(
   coordinates: GeoPoint,
   category: PointCategory,
 ) {
-  const directImage = tags.image || tags['image:0'] || tags['contact:image']
+  const directImage = tags.image || tags['image:0']
 
   if (directImage && /^https?:\/\//i.test(directImage)) {
     return directImage
@@ -36,6 +36,10 @@ export function buildStaticPlaceImageUrl(
   })
 
   return `${staticMapBaseUrl}?${params.toString()}`
+}
+
+export function isStaticPlaceImageUrl(value: string) {
+  return value.startsWith(staticMapBaseUrl)
 }
 
 function buildCommonsImageUrl(fileName: string) {

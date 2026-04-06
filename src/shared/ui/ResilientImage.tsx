@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react'
 import type { ImgHTMLAttributes } from 'react'
 
 interface ResilientImageProps extends ImgHTMLAttributes<HTMLImageElement> {
@@ -10,34 +11,38 @@ export function ResilientImage({
   onError,
   ...props
 }: ResilientImageProps) {
-  const sources = [src, ...fallbackSrcs].filter(
-    (value, index, source): value is string =>
-      typeof value === 'string' && value.length > 0 && source.indexOf(value) === index,
+  const sources = useMemo(
+    () =>
+      [src, ...fallbackSrcs].filter(
+        (value, index, source): value is string =>
+          typeof value === 'string' && value.length > 0 && source.indexOf(value) === index,
+      ),
+    [fallbackSrcs, src],
   )
-  const initialSrc = sources[0]
+  const sourceKey = sources.join('||')
+  const [imageState, setImageState] = useState({ key: sourceKey, index: 0 })
 
-  if (!initialSrc) {
+  if (!sources.length) {
     return null
   }
+
+  const activeState = imageState.key === sourceKey ? imageState : { key: sourceKey, index: 0 }
+  const activeIndex = Math.min(activeState.index, sources.length - 1)
 
   return (
     <img
       {...props}
-      data-fallback-index="0"
       onError={(event) => {
-        const image = event.currentTarget
-        const currentIndex = Number(image.dataset.fallbackIndex ?? '0')
-        const nextIndex = currentIndex + 1
+        const nextIndex = activeIndex + 1
 
         if (nextIndex < sources.length) {
-          image.dataset.fallbackIndex = String(nextIndex)
-          image.src = sources[nextIndex]
+          setImageState({ key: sourceKey, index: nextIndex })
           return
         }
 
         onError?.(event)
       }}
-      src={initialSrc}
+      src={sources[activeIndex]}
     />
   )
 }

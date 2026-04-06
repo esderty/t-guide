@@ -18,6 +18,7 @@ import {
   createLeafletMap,
   createPoiIcon,
   createUserIcon,
+  getPointCategoryIcon,
 } from '@/features/route-map/lib/leaflet-map'
 import { appMapConfig } from '@/shared/config/map'
 
@@ -34,19 +35,22 @@ export interface DiscoveryRadiusOption {
 interface DiscoveryMapProps {
   activeCategory: PointCategory | 'all'
   categoryOptions: DiscoveryCategoryOption[]
+  embedded?: boolean
+  emptyMessage: string
   geolocationError: string | null
-  isExtendedRadius: boolean
   isLoading: boolean
   loadError: string | null
   nearbyPoints: NearbyPoint[]
   onChangeRadius: (radiusMeters: number) => void
   onLocateUser: () => void
+  onSearchQueryChange: (value: string) => void
   onSelectCategory: (category: PointCategory | 'all') => void
   onSelectNextPoint: () => void
   onSelectPoint: (pointId: string) => void
   onSelectPreviousPoint: () => void
   radiusMeters: number
   radiusOptions: DiscoveryRadiusOption[]
+  searchQuery: string
   selectedPointId: string
   userPosition: GeoPoint | null
 }
@@ -58,25 +62,29 @@ const locateZoom = 15.5
 export function DiscoveryMap({
   activeCategory,
   categoryOptions,
+  embedded = false,
+  emptyMessage,
   geolocationError,
-  isExtendedRadius,
   isLoading,
   loadError,
   nearbyPoints,
   onChangeRadius,
   onLocateUser,
+  onSearchQueryChange,
   onSelectCategory,
   onSelectNextPoint,
   onSelectPoint,
   onSelectPreviousPoint,
   radiusMeters,
   radiusOptions,
+  searchQuery,
   selectedPointId,
   userPosition,
 }: DiscoveryMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<L.Map | null>(null)
   const overlayRef = useRef<L.LayerGroup | null>(null)
+  const markerRefs = useRef(new Map<string, L.Marker>())
   const controlsRef = useRef<HTMLDivElement | null>(null)
   const initialCenterRef = useRef(userPosition ?? appMapConfig.defaultCenter)
   const skipSelectedFocusRef = useRef(true)
@@ -93,14 +101,15 @@ export function DiscoveryMap({
 
     return getBoundsFromPoints(points)
   }, [nearbyPoints, userPosition])
-  const activeCategoryLabel =
-    categoryOptions.find((option) => option.id === activeCategory)?.label ?? 'Все места'
+  const activeCategoryOption =
+    categoryOptions.find((option) => option.id === activeCategory) ?? categoryOptions[0]
   const activeRadiusLabel =
     radiusOptions.find((option) => option.value === radiusMeters)?.label ?? `${radiusMeters / 1000} км`
   const canNavigatePoints = nearbyPoints.length > 1
 
   useEffect(() => {
     const container = mapContainerRef.current
+    const markers = markerRefs.current
 
     if (!container || mapRef.current) {
       return
@@ -125,6 +134,7 @@ export function DiscoveryMap({
     return () => {
       overlayRef.current?.clearLayers()
       overlayRef.current = null
+      markers.clear()
       mapRef.current?.remove()
       mapRef.current = null
     }
@@ -182,6 +192,7 @@ export function DiscoveryMap({
     }
 
     overlay.clearLayers()
+    markerRefs.current.clear()
 
     if (userPosition) {
       createDiscoveryRadiusCircle(userPosition, radiusMeters).addTo(overlay)
@@ -189,23 +200,21 @@ export function DiscoveryMap({
 
     nearbyPoints.forEach((point) => {
       const googleMapsUrl = buildGoogleMapsUrl(point.coordinates, userPosition)
-      const popupAddress = point.addressLabel
-        ? `<p class="map-popup__meta">${escapeHtml(point.addressLabel)}</p>`
-        : ''
       const marker = L.marker([point.coordinates.lat, point.coordinates.lng], {
-        icon: createPoiIcon(point, point.id === selectedPointId),
+        icon: createPoiIcon(point, false),
         title: buildMarkerTitle(point),
       })
-        .bindPopup(`
-          <div class="map-popup">
-            <strong class="map-popup__title">${escapeHtml(point.title)}</strong>
-            ${popupAddress}
-            <a class="map-popup__link" href="${googleMapsUrl}" target="_blank" rel="noreferrer">Открыть в Google Maps</a>
-          </div>
-        `)
-        .on('click', () => onSelectPoint(point.id))
+        .bindPopup(buildPopupMarkup(point, googleMapsUrl), {
+          autoPan: true,
+          keepInView: true,
+        })
+        .on('click', () => {
+          marker.openPopup()
+          onSelectPoint(point.id)
+        })
 
       marker.addTo(overlay)
+      markerRefs.current.set(point.id, marker)
     })
 
     if (userPosition) {
@@ -214,10 +223,23 @@ export function DiscoveryMap({
         title: 'Текущее местоположение пользователя',
       }).addTo(overlay)
     }
-  }, [nearbyPoints, onSelectPoint, radiusMeters, selectedPointId, userPosition])
+  }, [nearbyPoints, onSelectPoint, radiusMeters, userPosition])
+
+  useEffect(() => {
+    nearbyPoints.forEach((point) => {
+      const marker = markerRefs.current.get(point.id)
+
+      if (!marker) {
+        return
+      }
+
+      marker.setIcon(createPoiIcon(point, point.id === selectedPointId))
+    })
+  }, [nearbyPoints, selectedPointId])
 
   useEffect(() => {
     const map = mapRef.current
+    const markers = markerRefs.current
 
     if (!map || !selectedPoint) {
       return
@@ -225,7 +247,13 @@ export function DiscoveryMap({
 
     if (skipSelectedFocusRef.current) {
       skipSelectedFocusRef.current = false
-      return
+      const initialTimeout = window.setTimeout(() => {
+        markers.get(selectedPoint.id)?.openPopup()
+      }, 40)
+
+      return () => {
+        window.clearTimeout(initialTimeout)
+      }
     }
 
     applyLeafletLocation(map, {
@@ -234,6 +262,14 @@ export function DiscoveryMap({
       duration: 600,
       easing: 'ease-in-out',
     })
+
+    const popupTimeout = window.setTimeout(() => {
+      markers.get(selectedPoint.id)?.openPopup()
+    }, 260)
+
+    return () => {
+      window.clearTimeout(popupTimeout)
+    }
   }, [selectedPoint])
 
   function focusOnUser() {
@@ -267,7 +303,7 @@ export function DiscoveryMap({
   }
 
   return (
-    <section className="discovery-map discovery-map--wide">
+    <section className={`discovery-map discovery-map--wide${embedded ? ' discovery-map--embedded' : ''}`}>
       <div className="discovery-map__toolbar" ref={controlsRef}>
         <div className="discovery-map__toolbar-side discovery-map__toolbar-side--start">
           <div className={`discovery-map__dropdown${openMenu === 'category' ? ' discovery-map__dropdown--open' : ''}`}>
@@ -277,8 +313,9 @@ export function DiscoveryMap({
               onClick={() => toggleMenu('category')}
               type="button"
             >
-              <span className="discovery-map__dropdown-value">{activeCategoryLabel}</span>
-              <span className="discovery-map__dropdown-chevron" aria-hidden="true">▾</span>
+              <span aria-hidden="true" className="discovery-map__dropdown-icon">{getPointCategoryIcon(activeCategoryOption.id)}</span>
+              <span className="discovery-map__dropdown-value">{activeCategoryOption.label}</span>
+              <span aria-hidden="true" className="discovery-map__dropdown-chevron">▾</span>
             </button>
 
             <div
@@ -293,7 +330,8 @@ export function DiscoveryMap({
                   onClick={() => handleCategorySelect(category.id)}
                   type="button"
                 >
-                  {category.label}
+                  <span aria-hidden="true" className="discovery-map__dropdown-option-icon">{getPointCategoryIcon(category.id)}</span>
+                  <span>{category.label}</span>
                 </button>
               ))}
             </div>
@@ -301,7 +339,18 @@ export function DiscoveryMap({
         </div>
 
         <div className="discovery-map__toolbar-title-wrap">
-          <h2 className="section-title discovery-map__title">Интересные места рядом</h2>
+          <label className="discovery-map__search" htmlFor="nearby-search">
+            <span aria-hidden="true" className="discovery-map__search-icon">⌕</span>
+            <input
+              autoComplete="off"
+              className="discovery-map__search-input"
+              id="nearby-search"
+              onChange={(event) => onSearchQueryChange(event.target.value)}
+              placeholder="Поиск мест в радиусе"
+              type="search"
+              value={searchQuery}
+            />
+          </label>
         </div>
 
         <div className="discovery-map__toolbar-side discovery-map__toolbar-side--end">
@@ -313,7 +362,7 @@ export function DiscoveryMap({
               type="button"
             >
               <span className="discovery-map__dropdown-value">{activeRadiusLabel}</span>
-              <span className="discovery-map__dropdown-chevron" aria-hidden="true">▾</span>
+              <span aria-hidden="true" className="discovery-map__dropdown-chevron">▾</span>
             </button>
 
             <div
@@ -347,7 +396,7 @@ export function DiscoveryMap({
           </div>
         ) : null}
         {!isLoading && !mapLoadError && !loadError && nearbyPoints.length === 0 ? (
-          <div className="discovery-map__overlay-note">В этом радиусе пока нет подходящих мест.</div>
+          <div className="discovery-map__overlay-note">{emptyMessage}</div>
         ) : null}
       </div>
 
@@ -381,15 +430,23 @@ export function DiscoveryMap({
         </div>
       </div>
 
-      {isExtendedRadius ? (
-        <p className="discovery-map__helper">
-          В выбранном радиусе таких мест не нашлось, поэтому показаны ближайшие доступные точки.
-        </p>
-      ) : null}
-
       {geolocationError ? <p className="map-card__note">{geolocationError}</p> : null}
     </section>
   )
+}
+
+function buildPopupMarkup(point: NearbyPoint, googleMapsUrl: string) {
+  const popupAddress = point.addressLabel
+    ? `<p class="map-popup__meta">${escapeHtml(point.addressLabel)}</p>`
+    : ''
+
+  return `
+    <div class="map-popup">
+      <strong class="map-popup__title">${escapeHtml(point.title)}</strong>
+      ${popupAddress}
+      <a class="map-popup__link" href="${googleMapsUrl}" target="_blank" rel="noreferrer">Открыть в Google Maps</a>
+    </div>
+  `
 }
 
 function escapeHtml(value: string) {

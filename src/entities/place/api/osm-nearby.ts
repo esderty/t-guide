@@ -212,7 +212,7 @@ async function fetchOverpassElements(query: string) {
     }
   }
 
-  throw lastError ?? new Error('Р СњР Вµ РЎС“Р Т‘Р В°Р В»Р С•РЎРѓРЎРЉ Р С—Р С•Р В»РЎС“РЎвЂЎР С‘РЎвЂљРЎРЉ Р СР ВµРЎРѓРЎвЂљР В° Р С‘Р В· Overpass')
+  throw lastError ?? new Error('Не удалось получить места рядом из Overpass')
 }
 
 function toNearbyPoint(
@@ -251,6 +251,8 @@ function toNearbyPoint(
     description: addressLabel ? `${typeLabel}. ${addressLabel}.` : `${typeLabel} рядом с вами.`,
     coordinates,
     imageUrl: resolveNearbyPointImageUrl(tags, coordinates, category),
+    wikipediaTitle: tags.wikipedia,
+    wikidataId: tags.wikidata,
     expectedVisitMinutes: defaultVisitMinutes[category],
     rating: 0,
     scheduleLabel:

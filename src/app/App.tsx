@@ -9,8 +9,7 @@ function App() {
       <div className="app-shell">
         <header className="topbar">
           <Link className="brand" to={appRoutes.home}>
-            <span className="brand__eyebrow">Nearby audio guide</span>
-            <span className="brand__title">Audio Guide</span>
+            <span className="brand__title">Интересные места рядом</span>
           </Link>
 
           <nav className="topbar__nav">
