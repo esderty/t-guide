@@ -7,6 +7,7 @@ import {
   buildStaticPlaceImageUrl,
   isStaticPlaceImageUrl,
 } from '@/entities/place/lib/place-images'
+import { buildPlacePlaceholderImage } from '@/shared/lib/placeholder-images'
 import { ResilientImage } from '@/shared/ui/ResilientImage'
 
 interface SmartPlaceImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'src'> {
@@ -31,19 +32,24 @@ export function SmartPlaceImage({
     key: '',
     url: null,
   })
+  const placeholderImage = useMemo(
+    () => buildPlacePlaceholderImage(category),
+    [category],
+  )
   const staticFallback = useMemo(
     () => buildStaticPlaceImageUrl(coordinates, category, 16),
     [category, coordinates],
   )
   const allFallbacks = useMemo(
     () =>
-      [src, staticFallback, ...fallbackSrcs, '/illustrations/landmark-card.svg'].filter(
-        (value): value is string => typeof value === 'string' && value.length > 0,
+      [staticFallback, ...fallbackSrcs, '/illustrations/landmark-card.svg'].filter(
+        (value, index, source): value is string =>
+          typeof value === 'string' && value.length > 0 && source.indexOf(value) === index,
       ),
-    [fallbackSrcs, src, staticFallback],
+    [fallbackSrcs, staticFallback],
   )
   const shouldLookupPhoto =
-    !src || isStaticPlaceImageUrl(src) || src.includes('/illustrations/')
+    !src || isStaticPlaceImageUrl(src) || src.includes('/illustrations/') || src.startsWith('data:image/svg+xml')
   const lookupKey = useMemo(
     () => [wikipediaTitle ?? '', wikidataId ?? ''].join('::'),
     [wikidataId, wikipediaTitle],
@@ -80,7 +86,8 @@ export function SmartPlaceImage({
     <ResilientImage
       {...props}
       fallbackSrcs={allFallbacks}
-      src={resolvedPhoto ?? undefined}
+      placeholderSrc={placeholderImage}
+      src={resolvedPhoto ?? src ?? undefined}
     />
   )
 }

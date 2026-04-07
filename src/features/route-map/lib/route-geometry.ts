@@ -1,7 +1,4 @@
-import type {
-  GeoPoint,
-  RouteStop,
-} from '@/entities/excursion/model/types'
+﻿import type { GeoPoint, RouteStop } from '@/entities/excursion/model/types'
 
 export type LngLat = [number, number]
 export type LngLatBounds = [LngLat, LngLat]
@@ -69,9 +66,7 @@ export function getBoundsFromPoints(points: GeoPoint[]): LngLatBounds {
   return getBoundsFromLngLat(points.map((point) => toLngLat(point)))
 }
 
-export function getBoundsFromGeometry(
-  geometry: YandexRouteGeometry,
-): LngLatBounds {
+export function getBoundsFromGeometry(geometry: YandexRouteGeometry): LngLatBounds {
   if (geometry.type === 'LineString') {
     return getBoundsFromLngLat(geometry.coordinates)
   }
@@ -79,12 +74,14 @@ export function getBoundsFromGeometry(
   return getBoundsFromLngLat(geometry.coordinates.flat())
 }
 
-export function createFallbackRouteGeometry(
-  stops: RouteStop[],
-): YandexRouteGeometry {
+export function createFallbackRouteGeometry(stops: RouteStop[]): YandexRouteGeometry {
+  return createLineGeometryFromPoints(stops.map((stop) => stop.coordinates))
+}
+
+export function createLineGeometryFromPoints(points: GeoPoint[]): YandexRouteGeometry {
   return {
     type: 'LineString',
-    coordinates: stops.map((stop) => toLngLat(stop.coordinates)),
+    coordinates: points.map((point) => toLngLat(point)),
   }
 }
 
@@ -123,7 +120,7 @@ export async function buildWalkingRouteGeometry(
 
           if (!isValidRouteGeometry(geometry)) {
             return {
-              geometry: createSegmentFallbackGeometry(stop, nextStop),
+              geometry: createSegmentFallbackGeometry(stop.coordinates, nextStop.coordinates),
               resolved: false,
             }
           }
@@ -134,47 +131,14 @@ export async function buildWalkingRouteGeometry(
           }
         } catch {
           return {
-            geometry: createSegmentFallbackGeometry(stop, nextStop),
+            geometry: createSegmentFallbackGeometry(stop.coordinates, nextStop.coordinates),
             resolved: false,
           }
         }
       }),
     )
 
-    const resolvedSegments = segmentGeometries.filter((segment) => segment.resolved)
-
-    if (!segmentGeometries.length) {
-      return {
-        geometry: null,
-        status: 'fallback',
-      }
-    }
-
-    const geometry = mergeSegmentGeometries(
-      segmentGeometries.map((segment) => segment.geometry),
-    )
-
-    if (!geometry) {
-      return {
-        geometry: null,
-        status: 'fallback',
-      }
-    }
-
-    if (!resolvedSegments.length) {
-      return {
-        geometry,
-        status: 'fallback',
-      }
-    }
-
-    return {
-      geometry,
-      status:
-        resolvedSegments.length === segmentGeometries.length
-          ? 'walking'
-          : 'partial',
-    }
+    return toWalkingRouteBuildResult(segmentGeometries)
   } catch {
     return {
       geometry: null,
@@ -183,11 +147,18 @@ export async function buildWalkingRouteGeometry(
   }
 }
 
-export async function buildOsmWalkingRouteGeometry(
-  stops: RouteStop[],
+export function buildOsmWalkingRouteGeometry(stops: RouteStop[], signal?: AbortSignal) {
+  return buildOsmWalkingRouteGeometryFromPoints(
+    stops.map((stop) => stop.coordinates),
+    signal,
+  )
+}
+
+export async function buildOsmWalkingRouteGeometryFromPoints(
+  points: GeoPoint[],
   signal?: AbortSignal,
 ): Promise<WalkingRouteBuildResult> {
-  if (stops.length < 2) {
+  if (points.length < 2) {
     return {
       geometry: null,
       status: 'fallback',
@@ -196,19 +167,15 @@ export async function buildOsmWalkingRouteGeometry(
 
   try {
     const segmentGeometries = await Promise.all(
-      stops.slice(0, -1).map(async (stop, index) => {
-        const nextStop = stops[index + 1]
+      points.slice(0, -1).map(async (point, index) => {
+        const nextPoint = points[index + 1]
 
         try {
-          const geometry = await fetchOsmWalkingSegmentGeometry(
-            stop.coordinates,
-            nextStop.coordinates,
-            signal,
-          )
+          const geometry = await fetchOsmWalkingSegmentGeometry(point, nextPoint, signal)
 
           if (!geometry || geometry.length < 2) {
             return {
-              geometry: createSegmentFallbackGeometry(stop, nextStop),
+              geometry: createSegmentFallbackGeometry(point, nextPoint),
               resolved: false,
             }
           }
@@ -226,54 +193,21 @@ export async function buildOsmWalkingRouteGeometry(
           }
 
           return {
-            geometry: createSegmentFallbackGeometry(stop, nextStop),
+            geometry: createSegmentFallbackGeometry(point, nextPoint),
             resolved: false,
           }
         }
       }),
     )
 
-    const resolvedSegments = segmentGeometries.filter((segment) => segment.resolved)
-
-    if (!segmentGeometries.length) {
-      return {
-        geometry: null,
-        status: 'fallback',
-      }
-    }
-
-    const geometry = mergeSegmentGeometries(
-      segmentGeometries.map((segment) => segment.geometry),
-    )
-
-    if (!geometry) {
-      return {
-        geometry: null,
-        status: 'fallback',
-      }
-    }
-
-    if (!resolvedSegments.length) {
-      return {
-        geometry,
-        status: 'fallback',
-      }
-    }
-
-    return {
-      geometry,
-      status:
-        resolvedSegments.length === segmentGeometries.length
-          ? 'walking'
-          : 'partial',
-    }
+    return toWalkingRouteBuildResult(segmentGeometries)
   } catch (error) {
     if (isAbortError(error)) {
       throw error
     }
 
     return {
-      geometry: createFallbackRouteGeometry(stops),
+      geometry: createLineGeometryFromPoints(points),
       status: 'fallback',
     }
   }
@@ -407,19 +341,14 @@ function getBoundsFromLngLat(points: LngLat[]): LngLatBounds {
   ]
 }
 
-function createSegmentFallbackGeometry(
-  fromStop: RouteStop,
-  toStop: RouteStop,
-): YandexRouteGeometry {
+function createSegmentFallbackGeometry(from: GeoPoint, to: GeoPoint): YandexRouteGeometry {
   return {
     type: 'LineString',
-    coordinates: [toLngLat(fromStop.coordinates), toLngLat(toStop.coordinates)],
+    coordinates: [toLngLat(from), toLngLat(to)],
   }
 }
 
-function isValidRouteGeometry(
-  geometry: YandexRouteGeometry | undefined,
-): geometry is YandexRouteGeometry {
+function isValidRouteGeometry(geometry: YandexRouteGeometry | undefined): geometry is YandexRouteGeometry {
   if (!geometry) {
     return false
   }
@@ -431,9 +360,7 @@ function isValidRouteGeometry(
   return geometry.coordinates.some((segment) => segment.length > 1)
 }
 
-function mergeSegmentGeometries(
-  geometries: YandexRouteGeometry[],
-): YandexRouteGeometry | null {
+function mergeSegmentGeometries(geometries: YandexRouteGeometry[]): YandexRouteGeometry | null {
   const segments = geometries.flatMap((geometry) =>
     geometry.type === 'LineString' ? [geometry.coordinates] : geometry.coordinates,
   )
@@ -454,6 +381,40 @@ function mergeSegmentGeometries(
   return {
     type: 'MultiLineString',
     coordinates: validSegments,
+  }
+}
+
+function toWalkingRouteBuildResult(
+  segments: Array<{ geometry: YandexRouteGeometry; resolved: boolean }>,
+): WalkingRouteBuildResult {
+  const resolvedSegments = segments.filter((segment) => segment.resolved)
+
+  if (!segments.length) {
+    return {
+      geometry: null,
+      status: 'fallback',
+    }
+  }
+
+  const geometry = mergeSegmentGeometries(segments.map((segment) => segment.geometry))
+
+  if (!geometry) {
+    return {
+      geometry: null,
+      status: 'fallback',
+    }
+  }
+
+  if (!resolvedSegments.length) {
+    return {
+      geometry,
+      status: 'fallback',
+    }
+  }
+
+  return {
+    geometry,
+    status: resolvedSegments.length === segments.length ? 'walking' : 'partial',
   }
 }
 

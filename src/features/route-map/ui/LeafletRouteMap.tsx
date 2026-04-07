@@ -1,24 +1,29 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+﻿import { useEffect, useMemo, useRef, useState } from 'react'
 import * as L from 'leaflet'
 
 import {
   buildOsmWalkingRouteGeometry,
+  buildOsmWalkingRouteGeometryFromPoints,
   createFallbackRouteGeometry,
+  createLineGeometryFromPoints,
   formatMeters,
   getBoundsFromGeometry,
+  getBoundsFromPoints,
+  getDistanceMetersBetween,
   getNearestStop,
   toLngLat,
+  type YandexRouteGeometry,
 } from '@/features/route-map/lib/route-geometry'
 import {
   applyLeafletLocation,
   buildMarkerTitle,
+  createGuidePolyline,
   createLeafletMap,
   createRoutePolyline,
   createRouteStopIcon,
   createUserIcon,
 } from '@/features/route-map/lib/leaflet-map'
 import type { RouteMapProps } from '@/features/route-map/model/types'
-import { useUserGeolocation } from '@/features/route-map/model/useUserGeolocation'
 
 const routePadding: [number, number, number, number] = [44, 44, 44, 44]
 const pointZoom = 16
@@ -26,21 +31,23 @@ const userZoom = 15.4
 const defaultCenter = { lat: 55.751244, lng: 37.618423 }
 
 export function LeafletRouteMap({
-  stops,
-  selectedStopId,
-  routeColor,
+  onLocateUser,
   onSelect,
+  routeColor,
+  selectedStopId,
+  stops,
+  userPosition,
 }: RouteMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<L.Map | null>(null)
   const overlayRef = useRef<L.LayerGroup | null>(null)
   const initialCenterRef = useRef(stops[0]?.coordinates ?? defaultCenter)
-  const skipAutoFocusRef = useRef(true)
+  const skipSelectionFocusRef = useRef(true)
   const [loadError, setLoadError] = useState<string | null>(null)
-  const fallbackRouteGeometry = useMemo(() => createFallbackRouteGeometry(stops), [stops])
   const stopsSignature = useMemo(() => stops.map((stop) => stop.id).join('|'), [stops])
+  const fallbackRouteGeometry = useMemo(() => createFallbackRouteGeometry(stops), [stops])
   const [resolvedRoute, setResolvedRoute] = useState<{
-    geometry: ReturnType<typeof createFallbackRouteGeometry> | null
+    geometry: YandexRouteGeometry | null
     signature: string
   }>({
     geometry: null,
@@ -50,29 +57,54 @@ export function LeafletRouteMap({
     resolvedRoute.signature === stopsSignature && resolvedRoute.geometry
       ? resolvedRoute.geometry
       : fallbackRouteGeometry
-  const routeBounds = useMemo(() => getBoundsFromGeometry(routeGeometry), [routeGeometry])
-
-  const {
-    error: geolocationError,
-    requestLocation,
-    userPosition,
-  } = useUserGeolocation()
+  const wholeRouteBounds = useMemo(
+    () =>
+      getBoundsFromPoints([
+        ...stops.map((stop) => stop.coordinates),
+        ...(userPosition ? [userPosition] : []),
+      ]),
+    [stops, userPosition],
+  )
 
   const selectedStop =
     stops.find((stop) => stop.id === selectedStopId) ?? stops[0] ?? null
-  const previousStop =
-    selectedStop
-      ? stops.find((stop) => stop.order === selectedStop.order - 1)
-      : undefined
-  const nextStop =
-    selectedStop
-      ? stops.find((stop) => stop.order === selectedStop.order + 1)
-      : undefined
+  const previousStop = selectedStop
+    ? stops.find((stop) => stop.order === selectedStop.order - 1)
+    : undefined
+  const nextStop = selectedStop
+    ? stops.find((stop) => stop.order === selectedStop.order + 1)
+    : undefined
   const firstStop = stops[0]
   const lastStop = stops.at(-1)
   const nearestStop = useMemo(
     () => (userPosition ? getNearestStop(stops, userPosition) : null),
     [stops, userPosition],
+  )
+  const [guideRoute, setGuideRoute] = useState<{
+    geometry: YandexRouteGeometry | null
+    signature: string
+  }>({
+    geometry: null,
+    signature: '',
+  })
+  const guideSignature =
+    selectedStop && userPosition
+      ? `${selectedStop.id}:${userPosition.lat.toFixed(5)}:${userPosition.lng.toFixed(5)}`
+      : ''
+  const fallbackGuideGeometry = useMemo(() => {
+    if (!selectedStop || !userPosition) {
+      return null
+    }
+
+    return createLineGeometryFromPoints([userPosition, selectedStop.coordinates])
+  }, [selectedStop, userPosition])
+  const guideGeometry =
+    guideRoute.signature === guideSignature && guideRoute.geometry
+      ? guideRoute.geometry
+      : fallbackGuideGeometry
+  const guideBounds = useMemo(
+    () => (guideGeometry ? getBoundsFromGeometry(guideGeometry) : null),
+    [guideGeometry],
   )
 
   useEffect(() => {
@@ -124,12 +156,51 @@ export function LeafletRouteMap({
       }
     }
 
-    loadWalkingRoute()
+    void loadWalkingRoute()
 
     return () => {
       controller.abort()
     }
   }, [stops, stopsSignature])
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    async function loadGuideRoute() {
+      if (!selectedStop || !userPosition) {
+        queueMicrotask(() => {
+          setGuideRoute({ geometry: null, signature: '' })
+        })
+        return
+      }
+
+      try {
+        const result = await buildOsmWalkingRouteGeometryFromPoints(
+          [userPosition, selectedStop.coordinates],
+          controller.signal,
+        )
+
+        if (controller.signal.aborted) {
+          return
+        }
+
+        setGuideRoute({
+          geometry: result.geometry,
+          signature: guideSignature,
+        })
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          console.error(error)
+        }
+      }
+    }
+
+    void loadGuideRoute()
+
+    return () => {
+      controller.abort()
+    }
+  }, [guideSignature, selectedStop, userPosition])
 
   useEffect(() => {
     const map = mapRef.current
@@ -138,14 +209,25 @@ export function LeafletRouteMap({
       return
     }
 
-    skipAutoFocusRef.current = true
+    skipSelectionFocusRef.current = true
+
+    if (guideBounds && userPosition) {
+      applyLeafletLocation(map, {
+        bounds: guideBounds,
+        duration: 850,
+        easing: 'ease-in-out',
+        padding: routePadding,
+      })
+      return
+    }
+
     applyLeafletLocation(map, {
-      bounds: routeBounds,
-      duration: 900,
+      bounds: wholeRouteBounds,
+      duration: 850,
       easing: 'ease-in-out',
       padding: routePadding,
     })
-  }, [routeBounds, stops])
+  }, [guideBounds, stopsSignature, userPosition, wholeRouteBounds])
 
   useEffect(() => {
     const overlay = overlayRef.current
@@ -156,6 +238,10 @@ export function LeafletRouteMap({
 
     overlay.clearLayers()
     createRoutePolyline(routeGeometry, routeColor).addTo(overlay)
+
+    if (guideGeometry) {
+      createGuidePolyline(guideGeometry).addTo(overlay)
+    }
 
     stops.forEach((stop) => {
       const isActive = stop.id === selectedStopId
@@ -176,7 +262,7 @@ export function LeafletRouteMap({
         title: 'Ваше местоположение',
       }).addTo(overlay)
     }
-  }, [firstStop, lastStop, onSelect, routeColor, routeGeometry, selectedStopId, stops, userPosition])
+  }, [firstStop, guideGeometry, lastStop, onSelect, routeColor, routeGeometry, selectedStopId, stops, userPosition])
 
   useEffect(() => {
     const map = mapRef.current
@@ -185,8 +271,18 @@ export function LeafletRouteMap({
       return
     }
 
-    if (skipAutoFocusRef.current) {
-      skipAutoFocusRef.current = false
+    if (skipSelectionFocusRef.current) {
+      skipSelectionFocusRef.current = false
+      return
+    }
+
+    if (guideBounds && userPosition) {
+      applyLeafletLocation(map, {
+        bounds: guideBounds,
+        duration: 700,
+        easing: 'ease-in-out',
+        padding: routePadding,
+      })
       return
     }
 
@@ -196,7 +292,7 @@ export function LeafletRouteMap({
       duration: 700,
       easing: 'ease-in-out',
     })
-  }, [selectedStop])
+  }, [guideBounds, selectedStop, userPosition])
 
   function showWholeRoute() {
     const map = mapRef.current
@@ -206,7 +302,7 @@ export function LeafletRouteMap({
     }
 
     applyLeafletLocation(map, {
-      bounds: routeBounds,
+      bounds: wholeRouteBounds,
       duration: 800,
       easing: 'ease-in-out',
       padding: routePadding,
@@ -225,7 +321,7 @@ export function LeafletRouteMap({
     const map = mapRef.current
 
     if (!userPosition || !map) {
-      requestLocation()
+      onLocateUser?.()
       return
     }
 
@@ -246,7 +342,7 @@ export function LeafletRouteMap({
         onClick={() => goToStop(previousStop?.id)}
         type="button"
       >
-        <span className="map-card__control-icon map-card__control-icon--solo" aria-hidden="true">
+        <span aria-hidden="true" className="map-card__control-icon map-card__control-icon--solo">
           ←
         </span>
       </button>
@@ -258,7 +354,7 @@ export function LeafletRouteMap({
         onClick={() => goToStop(nextStop?.id)}
         type="button"
       >
-        <span className="map-card__control-icon map-card__control-icon--solo" aria-hidden="true">
+        <span aria-hidden="true" className="map-card__control-icon map-card__control-icon--solo">
           →
         </span>
       </button>
@@ -273,9 +369,7 @@ export function LeafletRouteMap({
           <span className="map-status map-status--error">{loadError}</span>
         </div>
 
-        <div className="map-card__controls map-card__controls--compact">
-          {navigationControls}
-        </div>
+        <div className="map-card__controls map-card__controls--compact">{navigationControls}</div>
       </section>
     )
   }
@@ -306,8 +400,8 @@ export function LeafletRouteMap({
           onClick={showUserLocation}
           type="button"
         >
-          <span className="map-card__control-icon" aria-hidden="true">
-            ◉
+          <span aria-hidden="true" className="map-card__control-icon">
+            ◎
           </span>
           <span>Найти себя</span>
         </button>
@@ -318,18 +412,23 @@ export function LeafletRouteMap({
           Активная точка: {selectedStop?.title ?? 'Маршрут'}
         </span>
         <span className="chip">
-          {nextStop
-            ? `Следующая: ${nextStop.order}. ${nextStop.title}`
-            : 'Это последняя точка маршрута'}
+          {nextStop ? `Следующая: ${nextStop.order}. ${nextStop.title}` : 'Это последняя точка маршрута'}
         </span>
-        <span className="chip">
-          {nearestStop && userPosition
-            ? `Ближе всего: ${nearestStop.stop.title} • ${formatMeters(nearestStop.distanceMeters)}`
-            : 'Определяем ближайшую точку'}
-        </span>
+        {nearestStop && userPosition ? (
+          <span className="chip">
+            Ближе всего: {nearestStop.stop.title} • {formatMeters(nearestStop.distanceMeters)}
+          </span>
+        ) : null}
+        {selectedStop && userPosition ? (
+          <span className="chip">
+            До текущей точки: {formatMeters(getDistanceMetersBetween(userPosition, selectedStop.coordinates))}
+          </span>
+        ) : null}
       </div>
-
-      {geolocationError ? <p className="map-card__note">{geolocationError}</p> : null}
     </section>
   )
 }
+
+
+
+

@@ -1,9 +1,10 @@
-import type { CSSProperties } from 'react'
+﻿import type { CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 
 import type { Excursion } from '@/entities/excursion/model/types'
 import { buildStaticPlaceImageUrl } from '@/entities/place/lib/place-images'
 import { appRoutes } from '@/shared/config/routes'
+import { buildRoutePlaceholderImage } from '@/shared/lib/placeholder-images'
 import {
   formatDifficulty,
   formatDistance,
@@ -36,8 +37,9 @@ export function ExcursionCard({ excursion }: ExcursionCardProps) {
           alt={excursion.title}
           fallbackSrcs={coverFallbacks}
           loading="lazy"
+          placeholderSrc={buildRoutePlaceholderImage(excursion.theme)}
           referrerPolicy="no-referrer"
-          src={excursion.coverImageUrl}
+          src={excursion.coverImageUrl || undefined}
         />
         <span className="card__theme-badge">{formatTheme(excursion.theme)}</span>
       </div>
@@ -60,21 +62,15 @@ export function ExcursionCard({ excursion }: ExcursionCardProps) {
 
         <div className="card__meta">
           <div className="meta-pill">
-            <span className="meta-pill__value">
-              {formatDuration(excursion.durationMinutes)}
-            </span>
+            <span className="meta-pill__value">{formatDuration(excursion.durationMinutes)}</span>
             <span className="meta-pill__label">Длительность</span>
           </div>
           <div className="meta-pill">
-            <span className="meta-pill__value">
-              {formatDistance(excursion.distanceKm)}
-            </span>
+            <span className="meta-pill__value">{formatDistance(excursion.distanceKm)}</span>
             <span className="meta-pill__label">Дистанция</span>
           </div>
           <div className="meta-pill">
-            <span className="meta-pill__value">
-              {formatStopCount(excursion.stops.length)}
-            </span>
+            <span className="meta-pill__value">{formatStopCount(excursion.stops.length)}</span>
             <span className="meta-pill__label">Точки</span>
           </div>
         </div>

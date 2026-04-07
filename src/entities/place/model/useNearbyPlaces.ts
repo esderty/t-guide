@@ -7,7 +7,6 @@ import type {
   SupportedLocale,
 } from '@/entities/excursion/model/types'
 import { fetchNearbyOsmPlaces } from '@/entities/place/api/osm-nearby'
-import { buildFallbackNearbyPlaces } from '@/entities/place/lib/fallback-nearby'
 
 interface UseNearbyPlacesParams {
   category: PointCategory | 'all'
@@ -69,15 +68,8 @@ export function useNearbyPlaces({
         }
 
         console.error(loadError)
-        const fallbackPlaces = buildFallbackNearbyPlaces(center, locale).filter((point) => {
-          const matchesCategory = category === 'all' || point.category === category
-          const matchesRadius = point.distanceMeters <= radiusMeters
-
-          return matchesCategory && matchesRadius
-        })
-
-        setPlaces(fallbackPlaces)
-        setError(null)
+        setPlaces([])
+        setError('Не удалось загрузить места рядом.')
       } finally {
         if (!isCancelled) {
           setIsLoading(false)
@@ -85,7 +77,7 @@ export function useNearbyPlaces({
       }
     }
 
-    loadPlaces()
+    void loadPlaces()
 
     return () => {
       isCancelled = true

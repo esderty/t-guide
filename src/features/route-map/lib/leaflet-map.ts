@@ -1,10 +1,6 @@
-import * as L from 'leaflet'
+﻿import * as L from 'leaflet'
 
-import type {
-  GeoPoint,
-  NearbyPoint,
-  RouteStop,
-} from '@/entities/excursion/model/types'
+import type { GeoPoint, NearbyPoint, RouteStop } from '@/entities/excursion/model/types'
 import {
   type LngLatBounds,
   type MapLocationRequest,
@@ -27,6 +23,9 @@ export function createOpenStreetMapLayer() {
 export function createLeafletMap(container: HTMLElement, center: GeoPoint, zoom: number) {
   const map = L.map(container, {
     attributionControl: true,
+    fadeAnimation: false,
+    markerZoomAnimation: false,
+    preferCanvas: true,
     zoomControl: false,
   }).setView(toLeafletLatLng(center), zoom)
 
@@ -92,9 +91,9 @@ export function createPoiIcon(point: NearbyPoint, isActive: boolean) {
   return L.divIcon({
     className: emptyDivIconClassName,
     html: `<div class="poi-marker${isActive ? ' poi-marker--active' : ''}"><span class="poi-marker__glyph poi-marker__glyph--${point.category}" aria-hidden="true">${getCategoryIcon(point.category)}</span></div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 24],
-    popupAnchor: [0, -20],
+    iconSize: [20, 20],
+    iconAnchor: [10, 18],
+    popupAnchor: [0, -16],
   })
 }
 
@@ -129,6 +128,7 @@ export function createDiscoveryRadiusCircle(center: GeoPoint, radiusMeters: numb
     fillColor: 'rgba(14, 116, 144, 0.14)',
     fillOpacity: 0.36,
     radius: radiusMeters,
+    renderer: L.canvas(),
     weight: 2,
   })
 }
@@ -141,6 +141,7 @@ export function createRoutePolyline(geometry: YandexRouteGeometry, routeColor: s
     lineCap: 'round',
     lineJoin: 'round',
     opacity: 1,
+    renderer: L.canvas(),
     weight: 12,
   })
 
@@ -149,6 +150,7 @@ export function createRoutePolyline(geometry: YandexRouteGeometry, routeColor: s
     lineCap: 'round',
     lineJoin: 'round',
     opacity: 0.9,
+    renderer: L.canvas(),
     weight: 6,
   })
 
@@ -157,6 +159,42 @@ export function createRoutePolyline(geometry: YandexRouteGeometry, routeColor: s
     lineCap: 'round',
     lineJoin: 'round',
     opacity: 0.8,
+    renderer: L.canvas(),
+    weight: 2,
+  })
+
+  return L.layerGroup([shadow, line, highlight])
+}
+
+export function createGuidePolyline(geometry: YandexRouteGeometry) {
+  const segments = toLeafletPolylineSegments(geometry)
+
+  const shadow = L.polyline(segments, {
+    color: 'rgba(23, 48, 66, 0.16)',
+    lineCap: 'round',
+    lineJoin: 'round',
+    opacity: 1,
+    renderer: L.canvas(),
+    weight: 14,
+  })
+
+  const line = L.polyline(segments, {
+    color: '#0f4c81',
+    dashArray: '12 10',
+    lineCap: 'round',
+    lineJoin: 'round',
+    opacity: 0.92,
+    renderer: L.canvas(),
+    weight: 5,
+  })
+
+  const highlight = L.polyline(segments, {
+    color: 'rgba(255,255,255,0.64)',
+    dashArray: '12 10',
+    lineCap: 'round',
+    lineJoin: 'round',
+    opacity: 0.72,
+    renderer: L.canvas(),
     weight: 2,
   })
 

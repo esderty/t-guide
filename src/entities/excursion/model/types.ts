@@ -1,4 +1,4 @@
-export type SupportedLocale = 'ru' | 'en' | 'de' | 'fr' | 'es'
+﻿export type SupportedLocale = 'ru' | 'en' | 'de' | 'fr' | 'es'
 export type ExcursionDifficulty = 'easy' | 'medium' | 'hard'
 export type ExcursionTheme = 'walk' | 'food' | 'nature' | 'fun' | 'mixed'
 export type PointCategory =
@@ -30,6 +30,8 @@ export interface RouteStop {
   description: string
   coordinates: GeoPoint
   imageUrl: string
+  wikidataId?: string
+  wikipediaTitle?: string
   expectedVisitMinutes: number
   rating: number
   scheduleLabel: string

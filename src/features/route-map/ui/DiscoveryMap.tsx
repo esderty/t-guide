@@ -8,13 +8,18 @@ import type {
 } from '@/entities/excursion/model/types'
 import { buildGoogleMapsUrl } from '@/entities/place/api/osm-nearby'
 import {
+  buildOsmWalkingRouteGeometryFromPoints,
+  createLineGeometryFromPoints,
+  getBoundsFromGeometry,
   getBoundsFromPoints,
   toLngLat,
+  type YandexRouteGeometry,
 } from '@/features/route-map/lib/route-geometry'
 import {
   applyLeafletLocation,
   buildMarkerTitle,
   createDiscoveryRadiusCircle,
+  createGuidePolyline,
   createLeafletMap,
   createPoiIcon,
   createUserIcon,
@@ -41,6 +46,7 @@ interface DiscoveryMapProps {
   isLoading: boolean
   loadError: string | null
   nearbyPoints: NearbyPoint[]
+  onBuildRoute: (pointId: string) => void
   onChangeRadius: (radiusMeters: number) => void
   onLocateUser: () => void
   onSearchQueryChange: (value: string) => void
@@ -50,6 +56,7 @@ interface DiscoveryMapProps {
   onSelectPreviousPoint: () => void
   radiusMeters: number
   radiusOptions: DiscoveryRadiusOption[]
+  routeTargetId: string | null
   searchQuery: string
   selectedPointId: string
   userPosition: GeoPoint | null
@@ -58,6 +65,8 @@ interface DiscoveryMapProps {
 const mapPadding: [number, number, number, number] = [56, 48, 48, 48]
 const selectedPointZoom = 16
 const locateZoom = 15.5
+
+type SelectionSource = 'marker' | 'navigation' | 'route'
 
 export function DiscoveryMap({
   activeCategory,
@@ -68,6 +77,7 @@ export function DiscoveryMap({
   isLoading,
   loadError,
   nearbyPoints,
+  onBuildRoute,
   onChangeRadius,
   onLocateUser,
   onSearchQueryChange,
@@ -77,6 +87,7 @@ export function DiscoveryMap({
   onSelectPreviousPoint,
   radiusMeters,
   radiusOptions,
+  routeTargetId,
   searchQuery,
   selectedPointId,
   userPosition,
@@ -88,11 +99,21 @@ export function DiscoveryMap({
   const controlsRef = useRef<HTMLDivElement | null>(null)
   const initialCenterRef = useRef(userPosition ?? appMapConfig.defaultCenter)
   const skipSelectedFocusRef = useRef(true)
+  const selectionSourceRef = useRef<SelectionSource | null>(null)
   const [mapLoadError, setMapLoadError] = useState<string | null>(null)
   const [openMenu, setOpenMenu] = useState<'category' | 'radius' | null>(null)
+  const [guideRoute, setGuideRoute] = useState<{
+    geometry: YandexRouteGeometry | null
+    signature: string
+  }>({
+    geometry: null,
+    signature: '',
+  })
 
   const selectedPoint =
     nearbyPoints.find((point) => point.id === selectedPointId) ?? nearbyPoints[0] ?? null
+  const guidedPoint =
+    nearbyPoints.find((point) => point.id === routeTargetId) ?? null
   const pointsBounds = useMemo(() => {
     const points = [
       ...nearbyPoints.map((point) => point.coordinates),
@@ -106,6 +127,25 @@ export function DiscoveryMap({
   const activeRadiusLabel =
     radiusOptions.find((option) => option.value === radiusMeters)?.label ?? `${radiusMeters / 1000} км`
   const canNavigatePoints = nearbyPoints.length > 1
+  const guideSignature =
+    userPosition && guidedPoint
+      ? `${guidedPoint.id}:${userPosition.lat.toFixed(5)}:${userPosition.lng.toFixed(5)}`
+      : ''
+  const fallbackGuideGeometry = useMemo(() => {
+    if (!userPosition || !guidedPoint) {
+      return null
+    }
+
+    return createLineGeometryFromPoints([userPosition, guidedPoint.coordinates])
+  }, [guidedPoint, userPosition])
+  const guideGeometry =
+    guideRoute.signature === guideSignature && guideRoute.geometry
+      ? guideRoute.geometry
+      : fallbackGuideGeometry
+  const guideBounds = useMemo(
+    () => (guideGeometry ? getBoundsFromGeometry(guideGeometry) : null),
+    [guideGeometry],
+  )
 
   useEffect(() => {
     const container = mapContainerRef.current
@@ -155,9 +195,58 @@ export function DiscoveryMap({
   }, [])
 
   useEffect(() => {
+    const controller = new AbortController()
+
+    async function loadGuideRoute() {
+      if (!userPosition || !guidedPoint) {
+        queueMicrotask(() => {
+          setGuideRoute({ geometry: null, signature: '' })
+        })
+        return
+      }
+
+      try {
+        const result = await buildOsmWalkingRouteGeometryFromPoints(
+          [userPosition, guidedPoint.coordinates],
+          controller.signal,
+        )
+
+        if (controller.signal.aborted) {
+          return
+        }
+
+        setGuideRoute({
+          geometry: result.geometry,
+          signature: guideSignature,
+        })
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          console.error(error)
+        }
+      }
+    }
+
+    void loadGuideRoute()
+
+    return () => {
+      controller.abort()
+    }
+  }, [guideSignature, guidedPoint, userPosition])
+
+  useEffect(() => {
     const map = mapRef.current
 
     if (!map) {
+      return
+    }
+
+    if (guideBounds && routeTargetId) {
+      applyLeafletLocation(map, {
+        bounds: guideBounds,
+        padding: mapPadding,
+        duration: 700,
+        easing: 'ease-in-out',
+      })
       return
     }
 
@@ -182,7 +271,7 @@ export function DiscoveryMap({
       duration: 850,
       easing: 'ease-in-out',
     })
-  }, [nearbyPoints.length, pointsBounds, userPosition])
+  }, [guideBounds, nearbyPoints.length, pointsBounds, routeTargetId, userPosition])
 
   useEffect(() => {
     const overlay = overlayRef.current
@@ -198,19 +287,35 @@ export function DiscoveryMap({
       createDiscoveryRadiusCircle(userPosition, radiusMeters).addTo(overlay)
     }
 
+    if (guideGeometry) {
+      createGuidePolyline(guideGeometry).addTo(overlay)
+    }
+
     nearbyPoints.forEach((point) => {
       const googleMapsUrl = buildGoogleMapsUrl(point.coordinates, userPosition)
       const marker = L.marker([point.coordinates.lat, point.coordinates.lng], {
-        icon: createPoiIcon(point, false),
+        icon: createPoiIcon(point, point.id === selectedPointId),
         title: buildMarkerTitle(point),
       })
-        .bindPopup(buildPopupMarkup(point, googleMapsUrl), {
-          autoPan: true,
-          keepInView: true,
-        })
+        .bindPopup(
+          buildPopupContent({
+            googleMapsUrl,
+            onBuildRoute: () => {
+              selectionSourceRef.current = 'route'
+              onSelectPoint(point.id)
+              onBuildRoute(point.id)
+            },
+            point,
+          }),
+          {
+            autoPan: true,
+            keepInView: true,
+          },
+        )
         .on('click', () => {
-          marker.openPopup()
+          selectionSourceRef.current = 'marker'
           onSelectPoint(point.id)
+          marker.openPopup()
         })
 
       marker.addTo(overlay)
@@ -220,10 +325,10 @@ export function DiscoveryMap({
     if (userPosition) {
       L.marker([userPosition.lat, userPosition.lng], {
         icon: createUserIcon(),
-        title: 'Текущее местоположение пользователя',
+        title: 'Ваше местоположение',
       }).addTo(overlay)
     }
-  }, [nearbyPoints, onSelectPoint, radiusMeters, userPosition])
+  }, [guideGeometry, nearbyPoints, onBuildRoute, onSelectPoint, radiusMeters, selectedPointId, userPosition])
 
   useEffect(() => {
     nearbyPoints.forEach((point) => {
@@ -239,21 +344,23 @@ export function DiscoveryMap({
 
   useEffect(() => {
     const map = mapRef.current
-    const markers = markerRefs.current
+    const marker = selectedPoint ? markerRefs.current.get(selectedPoint.id) : null
 
-    if (!map || !selectedPoint) {
+    if (!map || !selectedPoint || !marker) {
       return
     }
 
     if (skipSelectedFocusRef.current) {
       skipSelectedFocusRef.current = false
-      const initialTimeout = window.setTimeout(() => {
-        markers.get(selectedPoint.id)?.openPopup()
-      }, 40)
+      return
+    }
 
-      return () => {
-        window.clearTimeout(initialTimeout)
-      }
+    const source = selectionSourceRef.current
+    selectionSourceRef.current = null
+
+    if (source === 'marker') {
+      marker.openPopup()
+      return
     }
 
     applyLeafletLocation(map, {
@@ -264,8 +371,8 @@ export function DiscoveryMap({
     })
 
     const popupTimeout = window.setTimeout(() => {
-      markers.get(selectedPoint.id)?.openPopup()
-    }, 260)
+      marker.openPopup()
+    }, 240)
 
     return () => {
       window.clearTimeout(popupTimeout)
@@ -300,6 +407,16 @@ export function DiscoveryMap({
   function handleRadiusSelect(nextRadius: number) {
     onChangeRadius(nextRadius)
     setOpenMenu(null)
+  }
+
+  function handleSelectPreviousPoint() {
+    selectionSourceRef.current = 'navigation'
+    onSelectPreviousPoint()
+  }
+
+  function handleSelectNextPoint() {
+    selectionSourceRef.current = 'navigation'
+    onSelectNextPoint()
   }
 
   return (
@@ -405,7 +522,7 @@ export function DiscoveryMap({
           <button
             className="discovery-map__arrow-button"
             disabled={!canNavigatePoints}
-            onClick={onSelectPreviousPoint}
+            onClick={handleSelectPreviousPoint}
             type="button"
           >
             <span aria-hidden="true">←</span>
@@ -422,7 +539,7 @@ export function DiscoveryMap({
           <button
             className="discovery-map__arrow-button"
             disabled={!canNavigatePoints}
-            onClick={onSelectNextPoint}
+            onClick={handleSelectNextPoint}
             type="button"
           >
             <span aria-hidden="true">→</span>
@@ -435,25 +552,56 @@ export function DiscoveryMap({
   )
 }
 
-function buildPopupMarkup(point: NearbyPoint, googleMapsUrl: string) {
-  const popupAddress = point.addressLabel
-    ? `<p class="map-popup__meta">${escapeHtml(point.addressLabel)}</p>`
-    : ''
+function buildPopupContent({
+  point,
+  googleMapsUrl,
+  onBuildRoute,
+}: {
+  point: NearbyPoint
+  googleMapsUrl: string
+  onBuildRoute: () => void
+}) {
+  const container = document.createElement('div')
+  container.className = 'map-popup'
 
-  return `
-    <div class="map-popup">
-      <strong class="map-popup__title">${escapeHtml(point.title)}</strong>
-      ${popupAddress}
-      <a class="map-popup__link" href="${googleMapsUrl}" target="_blank" rel="noreferrer">Открыть в Google Maps</a>
-    </div>
-  `
+  const title = document.createElement('strong')
+  title.className = 'map-popup__title'
+  title.textContent = point.title
+  container.appendChild(title)
+
+  if (point.addressLabel) {
+    const meta = document.createElement('p')
+    meta.className = 'map-popup__meta'
+    meta.textContent = point.addressLabel
+    container.appendChild(meta)
+  }
+
+  const actions = document.createElement('div')
+  actions.className = 'map-popup__actions'
+
+  const openLink = document.createElement('a')
+  openLink.className = 'map-popup__link'
+  openLink.href = googleMapsUrl
+  openLink.rel = 'noreferrer'
+  openLink.target = '_blank'
+  openLink.textContent = 'Открыть в Google Maps'
+  actions.appendChild(openLink)
+
+  const routeButton = document.createElement('button')
+  routeButton.className = 'map-popup__button'
+  routeButton.type = 'button'
+  routeButton.textContent = 'Построить маршрут'
+  routeButton.addEventListener('click', (event) => {
+    event.preventDefault()
+    event.stopPropagation()
+    onBuildRoute()
+  })
+  actions.appendChild(routeButton)
+
+  container.appendChild(actions)
+  return container
 }
 
-function escapeHtml(value: string) {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;')
-}
+
+
+

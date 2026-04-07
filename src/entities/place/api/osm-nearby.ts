@@ -106,6 +106,19 @@ const selectorsByCategory: Record<PointCategory, TagSelector[]> = {
   ],
 }
 
+const localeText = {
+  ru: {
+    addressUnknown: 'Адрес не указан.',
+    hoursUnknown: 'Часы не указаны',
+    overpassError: 'Не удалось получить места рядом из OpenStreetMap.',
+  },
+  en: {
+    addressUnknown: 'Address not specified.',
+    hoursUnknown: 'Hours not specified',
+    overpassError: 'Failed to load nearby places from OpenStreetMap.',
+  },
+} as const
+
 const cache = new Map<string, NearbyPoint[]>()
 
 export async function fetchNearbyOsmPlaces({
@@ -115,10 +128,10 @@ export async function fetchNearbyOsmPlaces({
   radiusMeters,
 }: FetchNearbyOsmPlacesParams): Promise<NearbyPoint[]> {
   const cacheKey = createCacheKey(category, center, locale, radiusMeters)
-  const cachedPoints = cache.get(cacheKey)
+  const cached = cache.get(cacheKey)
 
-  if (cachedPoints) {
-    return cachedPoints
+  if (cached) {
+    return cached
   }
 
   const selectors =
@@ -127,7 +140,7 @@ export async function fetchNearbyOsmPlaces({
       : selectorsByCategory[category]
 
   const query = buildOverpassQuery(selectors, center, radiusMeters)
-  const elements = await fetchOverpassElements(query)
+  const elements = await fetchOverpassElements(query, locale)
   const explicitCategory = category === 'all' ? null : category
 
   const points = elements
@@ -166,16 +179,10 @@ function buildOverpassQuery(
     `relation["${selector.key}"="${selector.value}"](around:${radiusMeters},${center.lat},${center.lng});`,
   ])
 
-  return [
-    '[out:json][timeout:25];',
-    '(',
-    ...selectorLines,
-    ');',
-    'out center;',
-  ].join('')
+  return ['[out:json][timeout:25];', '(', ...selectorLines, ');', 'out center;'].join('')
 }
 
-async function fetchOverpassElements(query: string) {
+async function fetchOverpassElements(query: string, locale: SupportedLocale) {
   let lastError: Error | null = null
 
   for (const endpoint of overpassEndpoints) {
@@ -212,7 +219,8 @@ async function fetchOverpassElements(query: string) {
     }
   }
 
-  throw lastError ?? new Error('Не удалось получить места рядом из Overpass')
+  const localeKey = locale === 'ru' ? 'ru' : 'en'
+  throw lastError ?? new Error(localeText[localeKey].overpassError)
 }
 
 function toNearbyPoint(
@@ -224,39 +232,42 @@ function toNearbyPoint(
   const tags = element.tags ?? {}
   const coordinates = getElementCoordinates(element)
 
-  if (!coordinates) {
+  if (!coordinates || isUnavailablePlace(tags)) {
     return null
   }
 
   const category = explicitCategory ?? resolveCategoryFromTags(tags)
 
-  if (!category) {
+  if (!category || !hasReliableIdentity(tags, category)) {
     return null
   }
 
-  if (category === 'landmark' && !hasHistoricLandmarkIdentity(tags)) {
+  const title = resolveTitle(tags, locale)
+
+  if (!title) {
     return null
   }
 
-  const distanceMeters = getDistanceMetersBetween(center, coordinates)
-  const title = resolveTitle(tags, category, locale)
-  const addressLabel = resolveAddress(tags, locale)
+  const localeKey = locale === 'ru' ? 'ru' : 'en'
   const typeLabel = resolveTypeLabel(category, tags, locale)
+  const addressLabel = resolveAddress(tags)
+  const distanceMeters = getDistanceMetersBetween(center, coordinates)
 
   return {
     id: `${element.type}-${element.id}`,
     title,
     category,
     shortDescription: addressLabel ? `${typeLabel} · ${addressLabel}` : typeLabel,
-    description: addressLabel ? `${typeLabel}. ${addressLabel}.` : `${typeLabel} рядом с вами.`,
+    description: addressLabel
+      ? `${typeLabel}. ${addressLabel}`
+      : `${typeLabel}. ${localeText[localeKey].addressUnknown}`,
     coordinates,
     imageUrl: resolveNearbyPointImageUrl(tags, coordinates, category),
-    wikipediaTitle: tags.wikipedia,
+    wikipediaTitle: normalizeWikipediaTitle(tags.wikipedia),
     wikidataId: tags.wikidata,
     expectedVisitMinutes: defaultVisitMinutes[category],
     rating: 0,
-    scheduleLabel:
-      tags.opening_hours || (locale === 'ru' ? 'Часы не указаны' : 'Hours not specified'),
+    scheduleLabel: tags.opening_hours?.trim() || localeText[localeKey].hoursUnknown,
     distanceMeters,
     addressLabel,
     googleMapsUrl: buildGoogleMapsUrl(coordinates, center),
@@ -266,10 +277,7 @@ function toNearbyPoint(
 
 function getElementCoordinates(element: OverpassElement): GeoPoint | null {
   if (typeof element.lat === 'number' && typeof element.lon === 'number') {
-    return {
-      lat: element.lat,
-      lng: element.lon,
-    }
+    return { lat: element.lat, lng: element.lon }
   }
 
   if (element.center) {
@@ -329,32 +337,59 @@ function resolveCategoryFromTags(tags: Record<string, string>): PointCategory | 
   return null
 }
 
+function isUnavailablePlace(tags: Record<string, string>) {
+  return [
+    tags.disused,
+    tags.abandoned,
+    tags.demolished,
+    tags.construction,
+    tags.proposed,
+  ].some((value) => value === 'yes')
+}
+
+function hasReliableIdentity(tags: Record<string, string>, category: PointCategory) {
+  const hasIdentity = Boolean(
+    tags['name:ru'] ||
+      tags.name ||
+      tags.official_name ||
+      tags.short_name ||
+      tags.brand ||
+      tags.operator ||
+      tags.wikipedia ||
+      tags.wikidata,
+  )
+
+  if (!hasIdentity) {
+    return false
+  }
+
+  if (category === 'landmark') {
+    return isHistoricLandmark(tags)
+  }
+
+  return true
+}
+
 function isHistoricLandmark(tags: Record<string, string>) {
   const historicValue = tags.historic?.trim().toLowerCase()
   return Boolean(historicValue && historicLandmarkValues.has(historicValue))
 }
 
-function hasHistoricLandmarkIdentity(tags: Record<string, string>) {
-  return Boolean(
-    tags['name:ru'] ||
-      tags.name ||
-      tags.official_name ||
-      tags.short_name ||
-      tags.wikipedia ||
-      tags.wikidata,
+function resolveTitle(tags: Record<string, string>, locale: SupportedLocale) {
+  const localizedName = locale === 'ru' ? tags['name:ru'] : tags[`name:${locale}`]
+
+  return (
+    localizedName ||
+    tags.name ||
+    tags.official_name ||
+    tags.short_name ||
+    tags.brand ||
+    tags.operator ||
+    null
   )
 }
 
-function resolveTitle(
-  tags: Record<string, string>,
-  category: PointCategory,
-  locale: SupportedLocale,
-) {
-  const localizedName = locale === 'ru' ? tags['name:ru'] : tags[`name:${locale}`]
-  return localizedName || tags.name || fallbackTitle(category, locale)
-}
-
-function resolveAddress(tags: Record<string, string>, locale: SupportedLocale) {
+function resolveAddress(tags: Record<string, string>) {
   const parts = [
     tags['addr:street'],
     tags['addr:housenumber'],
@@ -362,11 +397,7 @@ function resolveAddress(tags: Record<string, string>, locale: SupportedLocale) {
     tags['addr:city'],
   ].filter(Boolean)
 
-  if (parts.length) {
-    return parts.join(' · ')
-  }
-
-  return locale === 'ru' ? 'Адрес не указан' : 'Address not specified'
+  return parts.length ? parts.join(', ') : undefined
 }
 
 function resolveTypeLabel(
@@ -374,92 +405,82 @@ function resolveTypeLabel(
   tags: Record<string, string>,
   locale: SupportedLocale,
 ) {
-  const normalizedLocale = locale === 'ru' ? 'ru' : 'en'
+  const isRu = locale === 'ru'
 
   switch (category) {
     case 'museum':
-      if (tags.tourism === 'gallery') {
-        return normalizedLocale === 'ru' ? 'Галерея' : 'Gallery'
-      }
-      return normalizedLocale === 'ru' ? 'Музей' : 'Museum'
+      return tags.tourism === 'gallery'
+        ? isRu
+          ? 'Галерея'
+          : 'Gallery'
+        : isRu
+          ? 'Музей'
+          : 'Museum'
     case 'food':
-      if (tags.amenity === 'cafe') {
-        return normalizedLocale === 'ru' ? 'Кафе' : 'Cafe'
-      }
       if (tags.shop === 'bakery') {
-        return normalizedLocale === 'ru' ? 'Пекарня' : 'Bakery'
+        return isRu ? 'Пекарня' : 'Bakery'
+      }
+      if (tags.amenity === 'cafe') {
+        return isRu ? 'Кафе' : 'Cafe'
       }
       if (tags.amenity === 'bar' || tags.amenity === 'pub') {
-        return normalizedLocale === 'ru' ? 'Бар' : 'Bar'
+        return isRu ? 'Бар' : 'Bar'
       }
-      return normalizedLocale === 'ru' ? 'Ресторан' : 'Restaurant'
+      return isRu ? 'Ресторан' : 'Restaurant'
     case 'park':
       if (tags.leisure === 'garden') {
-        return normalizedLocale === 'ru' ? 'Сад' : 'Garden'
+        return isRu ? 'Сад' : 'Garden'
       }
-      if (
-        tags.leisure === 'nature_reserve' ||
-        tags.boundary === 'protected_area'
-      ) {
-        return normalizedLocale === 'ru' ? 'Заповедная зона' : 'Protected area'
+      if (tags.leisure === 'nature_reserve' || tags.boundary === 'protected_area') {
+        return isRu ? 'Охраняемая зона' : 'Protected area'
       }
-      return normalizedLocale === 'ru' ? 'Парк' : 'Park'
+      return isRu ? 'Парк' : 'Park'
     case 'entertainment':
       if (tags.amenity === 'cinema') {
-        return normalizedLocale === 'ru' ? 'Кинотеатр' : 'Cinema'
+        return isRu ? 'Кинотеатр' : 'Cinema'
       }
       if (tags.amenity === 'theatre') {
-        return normalizedLocale === 'ru' ? 'Театр' : 'Theatre'
+        return isRu ? 'Театр' : 'Theatre'
       }
-      return normalizedLocale === 'ru' ? 'Развлечение' : 'Attraction'
+      return isRu ? 'Развлечение' : 'Attraction'
     case 'landmark':
       switch (tags.historic) {
         case 'monument':
-          return normalizedLocale === 'ru' ? 'Памятник' : 'Monument'
+          return isRu ? 'Памятник' : 'Monument'
         case 'memorial':
-          return normalizedLocale === 'ru' ? 'Мемориал' : 'Memorial'
+          return isRu ? 'Мемориал' : 'Memorial'
         case 'castle':
-          return normalizedLocale === 'ru' ? 'Замок' : 'Castle'
+          return isRu ? 'Замок' : 'Castle'
         case 'ruins':
-          return normalizedLocale === 'ru' ? 'Руины' : 'Ruins'
+          return isRu ? 'Руины' : 'Ruins'
         case 'archaeological_site':
-          return normalizedLocale === 'ru' ? 'Археологический объект' : 'Archaeological site'
+          return isRu ? 'Археологический объект' : 'Archaeological site'
         case 'fort':
-          return normalizedLocale === 'ru' ? 'Крепость' : 'Fort'
+          return isRu ? 'Крепость' : 'Fort'
         case 'city_gate':
-          return normalizedLocale === 'ru' ? 'Исторические ворота' : 'Historic gate'
+          return isRu ? 'Исторические ворота' : 'Historic gate'
         case 'tower':
-          return normalizedLocale === 'ru' ? 'Историческая башня' : 'Historic tower'
+          return isRu ? 'Историческая башня' : 'Historic tower'
         case 'manor':
-          return normalizedLocale === 'ru' ? 'Усадьба' : 'Manor'
+          return isRu ? 'Усадьба' : 'Manor'
         case 'wayside_cross':
-          return normalizedLocale === 'ru' ? 'Исторический крест' : 'Wayside cross'
+          return isRu ? 'Исторический крест' : 'Wayside cross'
         case 'wayside_shrine':
-          return normalizedLocale === 'ru' ? 'Историческая часовня' : 'Wayside shrine'
+          return isRu ? 'Историческая часовня' : 'Wayside shrine'
+        default:
+          return isRu ? 'Историческое место' : 'Historic place'
       }
-      return normalizedLocale === 'ru' ? 'Историческое место' : 'Historic place'
     default:
-      return normalizedLocale === 'ru' ? 'Место' : 'Place'
+      return isRu ? 'Место' : 'Place'
   }
 }
 
-function fallbackTitle(category: PointCategory, locale: SupportedLocale) {
-  const normalizedLocale = locale === 'ru' ? 'ru' : 'en'
-
-  switch (category) {
-    case 'museum':
-      return normalizedLocale === 'ru' ? 'Музей рядом' : 'Nearby museum'
-    case 'food':
-      return normalizedLocale === 'ru' ? 'Ресторан рядом' : 'Nearby restaurant'
-    case 'park':
-      return normalizedLocale === 'ru' ? 'Парк рядом' : 'Nearby park'
-    case 'entertainment':
-      return normalizedLocale === 'ru' ? 'Развлечение рядом' : 'Nearby attraction'
-    case 'landmark':
-      return normalizedLocale === 'ru' ? 'Историческое место' : 'Historic place'
-    default:
-      return normalizedLocale === 'ru' ? 'Точка интереса' : 'Place of interest'
+function normalizeWikipediaTitle(reference?: string) {
+  if (!reference?.trim()) {
+    return undefined
   }
+
+  return reference
 }
 
 function createCacheKey(
@@ -476,10 +497,16 @@ function normalizeError(error: unknown) {
 }
 
 function uniqueByCompositeKey(point: NearbyPoint, index: number, source: NearbyPoint[]) {
-  const key = `${point.category}:${normalizeName(point.title)}:${point.coordinates.lat.toFixed(5)}:${point.coordinates.lng.toFixed(5)}`
+  const key = `${point.category}:${normalizeName(point.title)}:${point.coordinates.lat.toFixed(
+    5,
+  )}:${point.coordinates.lng.toFixed(5)}`
+
   return (
     source.findIndex((candidate) => {
-      const candidateKey = `${candidate.category}:${normalizeName(candidate.title)}:${candidate.coordinates.lat.toFixed(5)}:${candidate.coordinates.lng.toFixed(5)}`
+      const candidateKey = `${candidate.category}:${normalizeName(
+        candidate.title,
+      )}:${candidate.coordinates.lat.toFixed(5)}:${candidate.coordinates.lng.toFixed(5)}`
+
       return candidateKey === key
     }) === index
   )

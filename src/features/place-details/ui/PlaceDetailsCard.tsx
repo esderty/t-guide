@@ -1,11 +1,10 @@
-import type { RouteStop } from '@/entities/excursion/model/types'
-import { buildStaticPlaceImageUrl } from '@/entities/place/lib/place-images'
+﻿import type { RouteStop } from '@/entities/excursion/model/types'
 import {
   formatDuration,
   formatPointCategory,
   formatRating,
 } from '@/shared/lib/format'
-import { ResilientImage } from '@/shared/ui/ResilientImage'
+import { SmartPlaceImage } from '@/shared/ui/SmartPlaceImage'
 
 interface PlaceDetailsCardProps {
   stop: RouteStop
@@ -17,15 +16,16 @@ export function PlaceDetailsCard({ stop }: PlaceDetailsCardProps) {
   return (
     <article className="details-card">
       <div className="details-card__image">
-        <ResilientImage
+        <SmartPlaceImage
           alt={stop.title}
-          fallbackSrcs={[
-            buildStaticPlaceImageUrl(stop.coordinates, stop.category, 16),
-            '/illustrations/landmark-card.svg',
-          ]}
+          category={stop.category}
+          coordinates={stop.coordinates}
           loading="lazy"
           referrerPolicy="no-referrer"
           src={stop.imageUrl}
+          title={stop.title}
+          wikidataId={stop.wikidataId}
+          wikipediaTitle={stop.wikipediaTitle}
         />
       </div>
 

@@ -1,4 +1,4 @@
-import type { RouteStop } from '@/entities/excursion/model/types'
+﻿import type { RouteStop } from '@/entities/excursion/model/types'
 import {
   formatDuration,
   formatPointCategory,

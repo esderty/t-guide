@@ -6,6 +6,7 @@ export interface RouteMapProps {
   stops: RouteStop[]
   selectedStopId: string
   routeColor: string
+  onLocateUser?: () => void
   onSelect: (stopId: string) => void
   userPosition?: GeoPoint | null
 }

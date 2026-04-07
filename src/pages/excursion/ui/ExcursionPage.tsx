@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+﻿import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 import { useDiscoveryRoutes } from '@/entities/excursion/model/useDiscoveryRoutes'
@@ -21,13 +21,11 @@ import {
 } from '@/shared/lib/format'
 import { RouteOverview } from '@/widgets/route-overview/ui/RouteOverview'
 
-const autoSelectDistanceMeters = 140
-
 export function ExcursionPage() {
   const { slug } = useParams<{ slug: string }>()
   const storedContext = useMemo(() => getStoredDiscoveryContext(), [])
   const [selectedStopId, setSelectedStopId] = useState<string>('')
-  const { error: geolocationError, userPosition } = useUserGeolocation()
+  const { error: geolocationError, requestLocation, userPosition } = useUserGeolocation()
   const { excursions, isLoading } = useDiscoveryRoutes({
     activePointCategory: storedContext.activePointCategory,
     center: storedContext.center,
@@ -54,12 +52,8 @@ export function ExcursionPage() {
       return selectedStopId
     }
 
-    if (nearestStop && nearestStop.distanceMeters <= autoSelectDistanceMeters) {
-      return nearestStop.stop.id
-    }
-
     return excursion.stops[0]?.id ?? ''
-  }, [excursion, nearestStop, selectedStopId])
+  }, [excursion, selectedStopId])
 
   const selectedStop =
     excursion?.stops.find((stop) => stop.id === effectiveSelectedStopId) ??
@@ -145,10 +139,12 @@ export function ExcursionPage() {
       <div className="route-layout">
         <div className="route-layout__column">
           <RouteOverview
+            onLocateUser={requestLocation}
+            onSelectStop={setSelectedStopId}
             routeColor={excursion.routeColor}
             selectedStopId={selectedStop.id}
             stops={excursion.stops}
-            onSelectStop={setSelectedStopId}
+            userPosition={userPosition}
           />
         </div>
 

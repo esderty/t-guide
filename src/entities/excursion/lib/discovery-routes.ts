@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   AudioStory,
   Excursion,
   ExcursionDifficulty,
@@ -36,7 +36,6 @@ interface GeneratedRouteDraft {
 interface MixedBlueprint {
   categories: PointCategory[]
   key: string
-  theme: ExcursionTheme
 }
 
 const themeColors: Record<ExcursionTheme, string> = {
@@ -64,12 +63,12 @@ const categoryThemeMap: Record<PointCategory, ExcursionTheme> = {
 }
 
 const mixedBlueprints: MixedBlueprint[] = [
-  { key: 'city-story', categories: ['landmark', 'museum', 'park', 'food'], theme: 'mixed' },
-  { key: 'after-lunch', categories: ['food', 'landmark', 'park', 'museum'], theme: 'mixed' },
-  { key: 'weekend', categories: ['museum', 'food', 'entertainment', 'park'], theme: 'mixed' },
-  { key: 'evening', categories: ['entertainment', 'food', 'landmark', 'park'], theme: 'mixed' },
-  { key: 'slow-day', categories: ['park', 'landmark', 'food', 'museum'], theme: 'mixed' },
-  { key: 'city-highlight', categories: ['landmark', 'park', 'food', 'entertainment'], theme: 'mixed' },
+  { key: 'city-story', categories: ['landmark', 'museum', 'park', 'food'] },
+  { key: 'after-lunch', categories: ['food', 'landmark', 'park', 'museum'] },
+  { key: 'weekend', categories: ['museum', 'food', 'entertainment', 'park'] },
+  { key: 'evening', categories: ['entertainment', 'food', 'landmark', 'park'] },
+  { key: 'slow-day', categories: ['park', 'landmark', 'food', 'museum'] },
+  { key: 'city-highlight', categories: ['landmark', 'park', 'food', 'entertainment'] },
 ]
 
 const routeCreatedAtBase = Date.parse('2026-03-30T08:00:00.000Z')
@@ -98,7 +97,7 @@ export function createDiscoveryRoutes({
       : [activePointCategory]
 
   if (activePointCategory === 'all') {
-    for (const blueprint of mixedBlueprints) {
+    mixedBlueprints.forEach((blueprint) => {
       const stops = pickMixedRouteStops(pointsByCategory, blueprint.categories)
 
       if (stops.length >= 3) {
@@ -109,21 +108,17 @@ export function createDiscoveryRoutes({
           stops,
         )
       }
-    }
+    })
   }
 
   categoryOrder.forEach((category) => {
     const categoryPoints = pointsByCategory[category] ?? []
-    const categoryDrafts = buildCategoryRouteDrafts(
-      category,
-      categoryPoints,
-      locale,
-      radiusMeters,
-    )
 
-    categoryDrafts.forEach(({ draft, stops }) => {
-      pushRouteDraft(drafts, seenRoutes, draft, stops)
-    })
+    buildCategoryRouteDrafts(category, categoryPoints, locale, radiusMeters).forEach(
+      ({ draft, stops }) => {
+        pushRouteDraft(drafts, seenRoutes, draft, stops)
+      },
+    )
   })
 
   if (!drafts.length) {
@@ -184,26 +179,20 @@ function buildCategoryRouteDraft(
   variantIndex: number,
 ): GeneratedRouteDraft {
   const theme = categoryThemeMap[category]
-  const variantLabel = getVariantLabel(stops.length, variantIndex, locale)
-  const categoryLabel = getCategoryRouteLabel(category, locale)
   const radiusLabel = formatRadiusLabel(radiusMeters, locale)
-  const firstStop = stops[0]
-  const lastStop = stops.at(-1) ?? firstStop
+  const categoryLabel = getCategoryLabel(category, locale)
 
   return {
     audienceLabel: buildAudienceLabel(theme, stops.length, locale),
     coverImageUrl: pickRouteCoverImage(stops),
-    createdAt: new Date(routeCreatedAtBase - variantIndex * 60_000).toISOString(),
-    description:
-      locale === 'ru'
-        ? buildCategoryDescription(category, stops, radiusLabel)
-        : `A curated ${categoryLabel.toLowerCase()} route inside ${radiusLabel}.`,
+    createdAt: new Date(routeCreatedAtBase - variantIndex * 60000).toISOString(),
+    description: buildCategoryDescription(category, radiusLabel, stops.length, locale),
     difficulty: getDifficultyByStops(stops),
-    district: `${categoryLabel} • ${radiusLabel}`,
+    district: `${categoryLabel} · ${radiusLabel}`,
     routeColor: themeColors[theme],
-    slug: createRouteSlug(theme, stops, variantLabel),
+    slug: createRouteSlug(theme, stops, `${category}-${variantIndex + 1}`),
     stopIds: stops.map((stop) => stop.id),
-    tagline: buildCategoryTagline(category, firstStop.title, lastStop.title, locale),
+    tagline: buildCategoryTagline(category, stops, locale),
     theme,
     title: buildCategoryTitle(category, stops.length, variantIndex, locale),
   }
@@ -215,25 +204,21 @@ function buildMixedRouteDraft(
   locale: SupportedLocale,
   radiusMeters: number,
 ): GeneratedRouteDraft {
+  const theme: ExcursionTheme = 'mixed'
   const radiusLabel = formatRadiusLabel(radiusMeters, locale)
-  const firstStop = stops[0]
-  const lastStop = stops.at(-1) ?? firstStop
 
   return {
-    audienceLabel: buildAudienceLabel('mixed', stops.length, locale),
+    audienceLabel: buildAudienceLabel(theme, stops.length, locale),
     coverImageUrl: pickRouteCoverImage(stops),
-    createdAt: new Date(routeCreatedAtBase - 10 * 60_000 - stops.length * 1_000).toISOString(),
-    description:
-      locale === 'ru'
-        ? buildMixedDescription(blueprint.key, radiusLabel)
-        : `A balanced route for ${radiusLabel} that mixes city stories, pauses, food, and vivid stops.`,
+    createdAt: new Date(routeCreatedAtBase - 10 * 60000 - stops.length * 1000).toISOString(),
+    description: buildMixedDescription(blueprint.key, radiusLabel, locale),
     difficulty: getDifficultyByStops(stops),
-    district: locale === 'ru' ? `Смешанный маршрут • ${radiusLabel}` : `Mixed route • ${radiusLabel}`,
-    routeColor: themeColors[blueprint.theme],
-    slug: createRouteSlug(blueprint.theme, stops, blueprint.key),
+    district: locale === 'ru' ? `Смешанный маршрут · ${radiusLabel}` : `Mixed route · ${radiusLabel}`,
+    routeColor: themeColors[theme],
+    slug: createRouteSlug(theme, stops, blueprint.key),
     stopIds: stops.map((stop) => stop.id),
-    tagline: buildMixedTagline(blueprint.key, firstStop.title, lastStop.title, locale),
-    theme: blueprint.theme,
+    tagline: buildMixedTagline(blueprint.key, stops, locale),
+    theme,
     title: getMixedRouteTitle(blueprint.key, locale),
   }
 }
@@ -248,17 +233,17 @@ function buildFallbackRouteDraft(
   return {
     audienceLabel: buildAudienceLabel('mixed', stops.length, locale),
     coverImageUrl: pickRouteCoverImage(stops),
-    createdAt: new Date(routeCreatedAtBase - 99 * 60_000).toISOString(),
+    createdAt: new Date(routeCreatedAtBase - 99 * 60000).toISOString(),
     description:
       locale === 'ru'
-        ? `Ближайший маршрут, собранный из доступных точек в радиусе ${radiusLabel}.`
-        : `The closest route built from available stops within ${radiusLabel}.`,
+        ? `Быстрый маршрут из ближайших доступных точек внутри ${radiusLabel}.`
+        : `A quick route built from the closest available places within ${radiusLabel}.`,
     difficulty: getDifficultyByStops(stops),
-    district: locale === 'ru' ? `Ближайшие точки • ${radiusLabel}` : `Nearby places • ${radiusLabel}`,
+    district: locale === 'ru' ? `Ближайшие точки · ${radiusLabel}` : `Nearby places · ${radiusLabel}`,
     routeColor: themeColors.mixed,
     slug: createRouteSlug('mixed', stops, 'fallback'),
     stopIds: stops.map((stop) => stop.id),
-    tagline: `${stops[0].title} > ${stops.at(-1)?.title ?? stops[0].title}`,
+    tagline: locale === 'ru' ? 'Самый быстрый способ начать прогулку' : 'The fastest way to start exploring',
     theme: 'mixed',
     title: locale === 'ru' ? 'Быстрый маршрут рядом' : 'Quick route nearby',
   }
@@ -277,7 +262,9 @@ function createExcursionFromDraft({
   locale: SupportedLocale
   stops: NearbyPoint[]
 }): Excursion {
-  const routeStops = stops.map((stop, stopIndex) => createRouteStop(stop, stopIndex + 1, locale))
+  const routeStops = stops.map((stop, stopIndex) =>
+    createRouteStop(stop, stopIndex + 1, locale),
+  )
   const routeDistanceKm = Math.max(
     0.4,
     getRouteDistanceKm([center, ...routeStops.map((stop) => stop.coordinates)]),
@@ -319,6 +306,8 @@ function createRouteStop(point: NearbyPoint, order: number, locale: SupportedLoc
     description: point.description,
     coordinates: point.coordinates,
     imageUrl: point.imageUrl,
+    wikidataId: point.wikidataId,
+    wikipediaTitle: point.wikipediaTitle,
     expectedVisitMinutes: point.expectedVisitMinutes,
     rating: point.rating,
     scheduleLabel: point.scheduleLabel,
@@ -347,7 +336,9 @@ function pickMixedRouteStops(
   const picked: NearbyPoint[] = []
 
   for (const category of categoryPattern) {
-    const nextPoint = (pointsByCategory[category] ?? []).find((point) => !selectedIds.has(point.id))
+    const nextPoint = (pointsByCategory[category] ?? []).find(
+      (point) => !selectedIds.has(point.id),
+    )
 
     if (!nextPoint) {
       continue
@@ -410,7 +401,7 @@ function sortDiscoveryDrafts(left: GeneratedRouteDraft, right: GeneratedRouteDra
   return left.title.localeCompare(right.title, 'ru')
 }
 
-function getCategoryRouteLabel(category: PointCategory, locale: SupportedLocale) {
+function getCategoryLabel(category: PointCategory, locale: SupportedLocale) {
   if (locale !== 'ru') {
     switch (category) {
       case 'museum':
@@ -444,17 +435,90 @@ function getCategoryRouteLabel(category: PointCategory, locale: SupportedLocale)
   }
 }
 
-function getVariantLabel(stopCount: number, variantIndex: number, locale: SupportedLocale) {
-  const labels =
-    locale === 'ru'
-      ? ['быстрый круг', 'основной сценарий', 'расширенная версия']
-      : ['quick loop', 'main scenario', 'extended version']
-
-  if (stopCount <= 2) {
-    return labels[0]
+function buildCategoryTitle(
+  category: PointCategory,
+  stopCount: number,
+  variantIndex: number,
+  locale: SupportedLocale,
+) {
+  if (locale !== 'ru') {
+    return `${getCategoryLabel(category, locale)} ${variantIndex + 1}`
   }
 
-  return labels[Math.min(variantIndex, labels.length - 1)]
+  const titleSets: Record<PointCategory, string[]> = {
+    museum: ['Музеи рядом', 'Музейная прогулка', 'Галереи и музеи'],
+    landmark: ['Исторические места рядом', 'Следы города', 'Памятники и истории'],
+    food: ['Вкусный маршрут рядом', 'Гастро-паузы по району', 'Где поесть по пути'],
+    park: ['Зеленая прогулка рядом', 'Парки и тихие точки', 'Маршрут для паузы и воздуха'],
+    entertainment: ['Маршрут впечатлений', 'Где провести время', 'Яркие точки рядом'],
+  }
+
+  const pool = titleSets[category]
+  const baseTitle = pool[Math.min(variantIndex, pool.length - 1)]
+
+  if (stopCount >= 4 && category !== 'food') {
+    return `${baseTitle}: расширенный`
+  }
+
+  if (stopCount <= 2) {
+    return `${baseTitle}: короткий`
+  }
+
+  return baseTitle
+}
+
+function buildCategoryTagline(
+  category: PointCategory,
+  stops: NearbyPoint[],
+  locale: SupportedLocale,
+) {
+  const firstTitle = stops[0]?.title ?? ''
+  const lastTitle = stops.at(-1)?.title ?? firstTitle
+
+  if (locale !== 'ru') {
+    return `${firstTitle} → ${lastTitle}`
+  }
+
+  switch (category) {
+    case 'museum':
+      return `От ${firstTitle} к ${lastTitle} с музейными паузами`
+    case 'landmark':
+      return `История района от ${firstTitle} до ${lastTitle}`
+    case 'food':
+      return `Маршрут со вкусными остановками: ${firstTitle} → ${lastTitle}`
+    case 'park':
+      return `Зеленый темп от ${firstTitle} до ${lastTitle}`
+    case 'entertainment':
+      return `Живой сценарий от ${firstTitle} до ${lastTitle}`
+    default:
+      return `${firstTitle} → ${lastTitle}`
+  }
+}
+
+function buildCategoryDescription(
+  category: PointCategory,
+  radiusLabel: string,
+  stopCount: number,
+  locale: SupportedLocale,
+) {
+  if (locale !== 'ru') {
+    return `A curated ${getCategoryLabel(category, locale).toLowerCase()} inside ${radiusLabel} with ${stopCount} stops.`
+  }
+
+  switch (category) {
+    case 'museum':
+      return `Спокойный маршрут по музеям и галереям внутри ${radiusLabel}. Всего ${stopCount} остановки с короткими переходами.`
+    case 'landmark':
+      return `Исторический маршрут в пределах ${radiusLabel}: памятники, мемориалы и городские символы без лишних отклонений.`
+    case 'food':
+      return `Гастро-сценарий внутри ${radiusLabel}: места, где можно сделать вкусную паузу и комфортно продолжить прогулку.`
+    case 'park':
+      return `Зеленый маршрут в пределах ${radiusLabel} для более спокойного темпа, воздуха и коротких передышек.`
+    case 'entertainment':
+      return `Маршрут по ярким городским точкам внутри ${radiusLabel}, когда хочется сменить ритм и посмотреть что-то живое.`
+    default:
+      return `Маршрут внутри ${radiusLabel}.`
+  }
 }
 
 function getMixedRouteTitle(key: string, locale: SupportedLocale) {
@@ -477,6 +541,51 @@ function getMixedRouteTitle(key: string, locale: SupportedLocale) {
   }
 
   return locale === 'ru' ? ru[key] ?? ru['city-story'] : en[key] ?? en['city-story']
+}
+
+function buildMixedDescription(
+  key: string,
+  radiusLabel: string,
+  locale: SupportedLocale,
+) {
+  if (locale !== 'ru') {
+    return `A balanced route for ${radiusLabel} that mixes stories, pauses, food, and vivid stops.`
+  }
+
+  const descriptions: Record<string, string> = {
+    'city-story': `История, музейная пауза, зелень и еда собираются в одном маршруте внутри ${radiusLabel}.`,
+    'after-lunch': `Комфортный маршрут после еды: короткие переходы, городские точки и спокойная развязка внутри ${radiusLabel}.`,
+    weekend: `Маршрут на свободный день: разный темп, выразительные места и ощущение цельной прогулки внутри ${radiusLabel}.`,
+    evening: `Сценарий для второй половины дня: яркие места, пауза на еду и спокойный финал в радиусе ${radiusLabel}.`,
+    'slow-day': `Спокойный маршрут с зеленой паузой, историей и местом для отдыха — без спешки и лишних переходов внутри ${radiusLabel}.`,
+    'city-highlight': 'Собранный сценарий по сильным точкам района: городская история, вид, еда и место, где приятно задержаться.',
+  }
+
+  return descriptions[key] ?? descriptions['city-story']
+}
+
+function buildMixedTagline(
+  key: string,
+  stops: NearbyPoint[],
+  locale: SupportedLocale,
+) {
+  const firstTitle = stops[0]?.title ?? ''
+  const lastTitle = stops.at(-1)?.title ?? firstTitle
+
+  if (locale !== 'ru') {
+    return `${firstTitle} → ${lastTitle}`
+  }
+
+  const taglines: Record<string, string> = {
+    'city-story': 'История, пауза и вкусный финал в одном маршруте',
+    'after-lunch': 'Легкая прогулка после еды с хорошим ритмом',
+    weekend: 'Когда хочется не выбирать одну тему',
+    evening: 'Маршрут на поздний день с живым темпом',
+    'slow-day': 'Спокойный сценарий без лишней спешки',
+    'city-highlight': 'Лучшее из района в одном маршруте',
+  }
+
+  return taglines[key] ?? `${firstTitle} → ${lastTitle}`
 }
 
 function buildAudienceLabel(theme: ExcursionTheme, stopCount: number, locale: SupportedLocale) {
@@ -511,126 +620,18 @@ function buildAudienceLabel(theme: ExcursionTheme, stopCount: number, locale: Su
   }
 }
 
-function buildCategoryTitle(
-  category: PointCategory,
-  stopCount: number,
-  variantIndex: number,
-  locale: SupportedLocale,
-) {
-  if (locale !== 'ru') {
-    return `${getCategoryRouteLabel(category, locale)} ${variantIndex + 1}`
-  }
-
-  const titleSets: Record<PointCategory, string[]> = {
-    museum: ['Музеи рядом', 'Музейная прогулка', 'Галереи и музейные точки'],
-    landmark: ['Исторические места рядом', 'Следы города', 'Памятники и истории'],
-    food: ['Вкусный маршрут рядом', 'Гастро-паузы по району', 'Где поесть по пути'],
-    park: ['Зеленая прогулка рядом', 'Парки и тихие точки', 'Маршрут для паузы и воздуха'],
-    entertainment: ['Маршрут впечатлений', 'Где провести время', 'Яркие точки рядом'],
-  }
-
-  const pool = titleSets[category]
-  const baseTitle = pool[Math.min(variantIndex, pool.length - 1)]
-
-  if (stopCount >= 4 && category !== 'food') {
-    return `${baseTitle}: расширенный`
-  }
-
-  if (stopCount <= 2) {
-    return `${baseTitle}: короткий`
-  }
-
-  return baseTitle
-}
-
-function buildCategoryTagline(
-  category: PointCategory,
-  firstTitle: string,
-  lastTitle: string,
-  locale: SupportedLocale,
-) {
-  if (locale !== 'ru') {
-    return `${firstTitle} > ${lastTitle}`
-  }
-
-  switch (category) {
-    case 'museum':
-      return `От ${firstTitle} к ${lastTitle} с музейными паузами`
-    case 'landmark':
-      return `История района от ${firstTitle} до ${lastTitle}`
-    case 'food':
-      return `Маршрут со вкусными остановками: ${firstTitle} > ${lastTitle}`
-    case 'park':
-      return `Зеленый темп от ${firstTitle} до ${lastTitle}`
-    case 'entertainment':
-      return `Живой сценарий от ${firstTitle} до ${lastTitle}`
-    default:
-      return `${firstTitle} > ${lastTitle}`
-  }
-}
-
-function buildCategoryDescription(
-  category: PointCategory,
-  stops: NearbyPoint[],
-  radiusLabel: string,
-) {
-  const countLabel =
-    stops.length === 2 ? 'двух точках' : stops.length === 3 ? 'трех точках' : `${stops.length} точках`
-
-  switch (category) {
-    case 'museum':
-      return `Неспешный маршрут по ${countLabel} с музейной атмосферой и удобными паузами внутри ${radiusLabel}.`
-    case 'landmark':
-      return `Маршрут по историческим местам в пределах ${radiusLabel}: памятники, городские символы и короткие остановки по пути.`
-    case 'food':
-      return `Гастрономический сценарий в радиусе ${radiusLabel}: быстрые и приятные остановки там, где удобно продолжать прогулку.`
-    case 'park':
-      return `Зеленый маршрут в пределах ${radiusLabel} для более спокойного ритма, воздуха и коротких передышек.`
-    case 'entertainment':
-      return `Живой маршрут по точкам, где можно задержаться, переключить темп и провести время по-настоящему интересно.`
-    default:
-      return `Маршрут собран внутри ${radiusLabel}.`
-  }
-}
-
-function buildMixedDescription(key: string, radiusLabel: string) {
-  const descriptions: Record<string, string> = {
-    'city-story': `История, музейные остановки, зеленая пауза и еда собираются в одном маршруте внутри ${radiusLabel}.`,
-    'after-lunch': `Комфортный маршрут после еды: короткие переходы, городские точки и спокойная развязка в пределах ${radiusLabel}.`,
-    weekend: `Маршрут на свободный день: разный темп, выразительные места и ощущение цельной прогулки внутри ${radiusLabel}.`,
-    evening: `Сценарий для второй половины дня: яркие места, пауза на еду и спокойный финал в радиусе ${radiusLabel}.`,
-    'slow-day': 'Спокойный маршрут с зеленой паузой, историей и местом для отдыха — без спешки и лишних переходов.',
-    'city-highlight': 'Собранный сценарий по сильным точкам района: городская история, вид, еда и место, где приятно задержаться.',
-  }
-
-  return descriptions[key] ?? descriptions['city-story']
-}
-
-function buildMixedTagline(
-  key: string,
-  firstTitle: string,
-  lastTitle: string,
-  locale: SupportedLocale,
-) {
-  if (locale !== 'ru') {
-    return `${firstTitle} > ${lastTitle}`
-  }
-
-  const taglines: Record<string, string> = {
-    'city-story': 'История, пауза и вкусный финал в одном маршруте',
-    'after-lunch': 'Легкая прогулка после еды с хорошим ритмом',
-    weekend: 'Когда хочется не выбирать одну тему',
-    evening: 'Маршрут на поздний день с живым темпом',
-    'slow-day': 'Спокойный сценарий без лишней спешки',
-    'city-highlight': 'Лучшее из района в одном маршруте',
-  }
-
-  return taglines[key] ?? `${firstTitle} > ${lastTitle}`
-}
-
 function pickRouteCoverImage(stops: NearbyPoint[]) {
-  const photoStop = stops.find((stop) => !stop.imageUrl.includes('staticmap.openstreetmap.de'))
-  return photoStop?.imageUrl ?? stops[0]?.imageUrl ?? '/illustrations/landmark-card.svg'
+  const photoStop = stops.find((stop) => hasRealPhoto(stop.imageUrl))
+  return photoStop?.imageUrl ?? ''
+}
+
+function hasRealPhoto(value: string) {
+  return Boolean(
+    value &&
+      !value.includes('staticmap.openstreetmap.de') &&
+      !value.includes('/illustrations/') &&
+      !value.startsWith('data:image/svg+xml'),
+  )
 }
 
 function getDifficultyByStops(stops: NearbyPoint[]): ExcursionDifficulty {
@@ -655,7 +656,15 @@ function createRouteSlug(theme: ExcursionTheme, stops: NearbyPoint[], suffix: st
     .map((stop) => stop.id.replace(/[^a-z0-9-]/gi, '-'))
     .join('-')
 
-  return `${theme}-${suffix.toLowerCase().replace(/\s+/g, '-')}-${stopPart}`
+  return `${theme}-${slugify(suffix)}-${stopPart}`
+}
+
+function slugify(value: string) {
+  return value
+    .trim()
+    .toLocaleLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9а-яё-]/gi, '')
 }
 
 function getRouteDistanceKm(points: GeoPoint[]) {

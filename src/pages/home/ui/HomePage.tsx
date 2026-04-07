@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+﻿import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import type {
@@ -83,6 +83,7 @@ export function HomePage() {
   const [activeRouteTheme, setActiveRouteTheme] = useState<ExcursionTheme | 'all'>('all')
   const [maxRouteDuration, setMaxRouteDuration] = useState<number | null>(null)
   const [selectedPointId, setSelectedPointId] = useState<string>('')
+  const [routeTargetId, setRouteTargetId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const {
     error: geolocationError,
@@ -150,6 +151,12 @@ export function HomePage() {
     return nearbyPoints.filter((point) => matchesNearbyPoint(point, normalizedQuery))
   }, [nearbyPoints, searchQuery])
 
+
+  const effectiveRouteTargetId =
+    routeTargetId && filteredNearbyPoints.some((point) => point.id === routeTargetId)
+      ? routeTargetId
+      : null
+
   const effectiveSelectedPointId =
     filteredNearbyPoints.some((point) => point.id === selectedPointId)
       ? selectedPointId
@@ -169,7 +176,7 @@ export function HomePage() {
     [effectiveSelectedPointId, filteredNearbyPoints],
   )
 
-  function cycleSelectedPoint(direction: 1 | -1) {
+  const cycleSelectedPoint = useCallback((direction: 1 | -1) => {
     if (!filteredNearbyPoints.length) {
       return
     }
@@ -178,10 +185,20 @@ export function HomePage() {
       (point) => point.id === effectiveSelectedPointId,
     )
     const safeIndex = currentIndex >= 0 ? currentIndex : 0
-    const nextIndex = (safeIndex + direction + filteredNearbyPoints.length) % filteredNearbyPoints.length
+    const nextIndex =
+      (safeIndex + direction + filteredNearbyPoints.length) % filteredNearbyPoints.length
 
     setSelectedPointId(filteredNearbyPoints[nextIndex].id)
-  }
+  }, [effectiveSelectedPointId, filteredNearbyPoints])
+
+  const handleBuildRoute = useCallback((pointId: string) => {
+    setSelectedPointId(pointId)
+    setRouteTargetId(pointId)
+
+    if (!userPosition) {
+      requestLocation()
+    }
+  }, [requestLocation, userPosition])
 
   return (
     <section className="page page--home">
@@ -195,6 +212,7 @@ export function HomePage() {
           isLoading={isLoading || !canLoadNearbyPlaces}
           loadError={nearbyPlacesError}
           nearbyPoints={filteredNearbyPoints}
+          onBuildRoute={handleBuildRoute}
           onChangeRadius={setRadiusMeters}
           onLocateUser={requestLocation}
           onSearchQueryChange={setSearchQuery}
@@ -204,6 +222,7 @@ export function HomePage() {
           onSelectPreviousPoint={() => cycleSelectedPoint(-1)}
           radiusMeters={radiusMeters}
           radiusOptions={radiusOptions}
+          routeTargetId={effectiveRouteTargetId}
           searchQuery={searchQuery}
           selectedPointId={effectiveSelectedPointId}
           userPosition={userPosition}
@@ -286,6 +305,9 @@ export function HomePage() {
                 <a className="button button--secondary" href={selectedPointMapsUrl} rel="noreferrer" target="_blank">
                   Открыть в Google Maps
                 </a>
+                <button className="button button--primary" onClick={() => handleBuildRoute(selectedPoint.id)} type="button">
+                  Построить маршрут
+                </button>
               </div>
             </div>
           </article>
@@ -386,3 +408,6 @@ function matchesNearbyPoint(point: NearbyPoint, normalizedQuery: string) {
 function normalizeSearch(value: string) {
   return value.trim().toLocaleLowerCase()
 }
+
+
+
