@@ -4,7 +4,7 @@ import type { GeoPoint, NearbyPoint, RouteStop } from '@/entities/excursion/mode
 import {
   type LngLatBounds,
   type MapLocationRequest,
-  type YandexRouteGeometry,
+  type RouteGeometry,
 } from '@/features/route-map/lib/route-geometry'
 
 export const openStreetMapTileUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
@@ -78,7 +78,7 @@ export function toLeafletBounds(bounds: LngLatBounds): L.LatLngBoundsExpression 
 }
 
 export function toLeafletPolylineSegments(
-  geometry: YandexRouteGeometry,
+  geometry: RouteGeometry,
 ): L.LatLngExpression[] | L.LatLngExpression[][] {
   if (geometry.type === 'LineString') {
     return geometry.coordinates.map(toLeafletLatLngFromLngLat)
@@ -87,10 +87,10 @@ export function toLeafletPolylineSegments(
   return geometry.coordinates.map((segment) => segment.map(toLeafletLatLngFromLngLat))
 }
 
-export function createPoiIcon(point: NearbyPoint, isActive: boolean) {
+export function createPoiIcon(point: NearbyPoint, isActive: boolean, isInDraft = false) {
   return L.divIcon({
     className: emptyDivIconClassName,
-    html: `<div class="poi-marker${isActive ? ' poi-marker--active' : ''}"><span class="poi-marker__glyph poi-marker__glyph--${point.category}" aria-hidden="true">${getCategoryIcon(point.category)}</span></div>`,
+    html: `<div class="poi-marker${isActive ? ' poi-marker--active' : ''}${isInDraft ? ' poi-marker--draft' : ''}"><span class="poi-marker__glyph poi-marker__glyph--${point.category}" aria-hidden="true">${getCategoryIcon(point.category)}</span></div>`,
     iconSize: [20, 20],
     iconAnchor: [10, 18],
     popupAnchor: [0, -16],
@@ -133,7 +133,7 @@ export function createDiscoveryRadiusCircle(center: GeoPoint, radiusMeters: numb
   })
 }
 
-export function createRoutePolyline(geometry: YandexRouteGeometry, routeColor: string) {
+export function createRoutePolyline(geometry: RouteGeometry, routeColor: string) {
   const segments = toLeafletPolylineSegments(geometry)
 
   const shadow = L.polyline(segments, {
@@ -166,7 +166,47 @@ export function createRoutePolyline(geometry: YandexRouteGeometry, routeColor: s
   return L.layerGroup([shadow, line, highlight])
 }
 
-export function createGuidePolyline(geometry: YandexRouteGeometry) {
+export function createSegmentedRoutePolyline(geometry: RouteGeometry) {
+  const segmentPalette = ['#1f8a70', '#0f4c81', '#7c3aed', '#d97706', '#4f772d', '#c2514b']
+  const segments =
+    geometry.type === 'LineString' ? [geometry.coordinates] : geometry.coordinates
+
+  const layers = segments.flatMap((segment, index) => {
+    const path = segment.map(toLeafletLatLngFromLngLat)
+    const routeColor = segmentPalette[index % segmentPalette.length]
+
+    return [
+      L.polyline(path, {
+        color: 'rgba(15, 118, 110, 0.16)',
+        lineCap: 'round',
+        lineJoin: 'round',
+        opacity: 1,
+        renderer: L.canvas(),
+        weight: 12,
+      }),
+      L.polyline(path, {
+        color: routeColor,
+        lineCap: 'round',
+        lineJoin: 'round',
+        opacity: 0.92,
+        renderer: L.canvas(),
+        weight: 6,
+      }),
+      L.polyline(path, {
+        color: 'rgba(255,255,255,0.46)',
+        lineCap: 'round',
+        lineJoin: 'round',
+        opacity: 0.78,
+        renderer: L.canvas(),
+        weight: 2,
+      }),
+    ]
+  })
+
+  return L.layerGroup(layers)
+}
+
+export function createGuidePolyline(geometry: RouteGeometry) {
   const segments = toLeafletPolylineSegments(geometry)
 
   const shadow = L.polyline(segments, {

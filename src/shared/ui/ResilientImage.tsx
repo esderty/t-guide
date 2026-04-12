@@ -30,12 +30,6 @@ export function ResilientImage({
   useEffect(() => {
     let isActive = true
 
-    queueMicrotask(() => {
-      if (isActive) {
-        setResolvedSrc(fallbackDisplaySrc)
-      }
-    })
-
     async function resolveSource() {
       for (const candidate of candidates) {
         const loaded = await preloadImage(candidate)
@@ -48,6 +42,10 @@ export function ResilientImage({
           setResolvedSrc(candidate)
           return
         }
+      }
+
+      if (isActive) {
+        setResolvedSrc(fallbackDisplaySrc)
       }
     }
 

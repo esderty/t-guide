@@ -12,7 +12,7 @@ import {
   getDistanceMetersBetween,
   getNearestStop,
   toLngLat,
-  type YandexRouteGeometry,
+  type RouteGeometry,
 } from '@/features/route-map/lib/route-geometry'
 import {
   applyLeafletLocation,
@@ -24,6 +24,7 @@ import {
   createUserIcon,
 } from '@/features/route-map/lib/leaflet-map'
 import type { RouteMapProps } from '@/features/route-map/model/types'
+import './LeafletRouteMap.css'
 
 const routePadding: [number, number, number, number] = [44, 44, 44, 44]
 const pointZoom = 16
@@ -47,7 +48,7 @@ export function LeafletRouteMap({
   const stopsSignature = useMemo(() => stops.map((stop) => stop.id).join('|'), [stops])
   const fallbackRouteGeometry = useMemo(() => createFallbackRouteGeometry(stops), [stops])
   const [resolvedRoute, setResolvedRoute] = useState<{
-    geometry: YandexRouteGeometry | null
+    geometry: RouteGeometry | null
     signature: string
   }>({
     geometry: null,
@@ -81,7 +82,7 @@ export function LeafletRouteMap({
     [stops, userPosition],
   )
   const [guideRoute, setGuideRoute] = useState<{
-    geometry: YandexRouteGeometry | null
+    geometry: RouteGeometry | null
     signature: string
   }>({
     geometry: null,

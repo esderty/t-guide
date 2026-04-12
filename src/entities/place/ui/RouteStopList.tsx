@@ -4,6 +4,7 @@ import {
   formatPointCategory,
   formatRating,
 } from '@/shared/lib/format'
+import './RouteStopList.css'
 
 interface RouteStopListProps {
   stops: RouteStop[]

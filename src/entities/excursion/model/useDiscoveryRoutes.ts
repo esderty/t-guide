@@ -1,12 +1,13 @@
-﻿import { useMemo } from 'react'
+﻿import { useEffect, useState } from 'react'
 
-import { createDiscoveryRoutes } from '@/entities/excursion/lib/discovery-routes'
 import type {
+  Excursion,
   GeoPoint,
+  NearbyPoint,
   PointCategory,
   SupportedLocale,
 } from '@/entities/excursion/model/types'
-import { useNearbyPlaces } from '@/entities/place/model/useNearbyPlaces'
+import { appApi } from '@/shared/api/client'
 
 interface UseDiscoveryRoutesParams {
   activePointCategory: PointCategory | 'all'
@@ -14,6 +15,7 @@ interface UseDiscoveryRoutesParams {
   enabled?: boolean
   locale: SupportedLocale
   radiusMeters: number
+  search?: string
 }
 
 export function useDiscoveryRoutes({
@@ -22,30 +24,70 @@ export function useDiscoveryRoutes({
   enabled = true,
   locale,
   radiusMeters,
+  search,
 }: UseDiscoveryRoutesParams) {
-  const nearbyResult = useNearbyPlaces({
-    category: activePointCategory,
-    center,
-    enabled,
-    locale,
-    radiusMeters,
-  })
+  const [nearbyPoints, setNearbyPoints] = useState<NearbyPoint[]>([])
+  const [excursions, setExcursions] = useState<Excursion[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const excursions = useMemo(
-    () =>
-      createDiscoveryRoutes({
-        activePointCategory,
-        center,
-        locale,
-        nearbyPoints: nearbyResult.places,
-        radiusMeters,
-      }),
-    [activePointCategory, center, locale, nearbyResult.places, radiusMeters],
-  )
+  useEffect(() => {
+    if (!enabled) {
+      setNearbyPoints([])
+      setExcursions([])
+      setIsLoading(false)
+      setError(null)
+      return undefined
+    }
+
+    let isActive = true
+
+    async function loadDiscoveryFeed() {
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        const response = await appApi.getDiscoveryFeed({
+          category: activePointCategory,
+          center,
+          locale,
+          radiusMeters,
+          search,
+        })
+
+        if (!isActive) {
+          return
+        }
+
+        setNearbyPoints(response.nearbyPoints)
+        setExcursions(response.excursions)
+      } catch (loadError) {
+        if (!isActive) {
+          return
+        }
+
+        console.error(loadError)
+        setNearbyPoints([])
+        setExcursions([])
+        setError('Не удалось загрузить данные для экрана.')
+      } finally {
+        if (isActive) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    void loadDiscoveryFeed()
+
+    return () => {
+      isActive = false
+    }
+  }, [activePointCategory, center, enabled, locale, radiusMeters, search])
 
   return {
-    ...nearbyResult,
+    error,
     excursions,
-    nearbyPoints: nearbyResult.places,
+    isLoading,
+    nearbyPoints,
   }
 }

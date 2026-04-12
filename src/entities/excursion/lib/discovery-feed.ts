@@ -90,7 +90,7 @@ const pointTemplates: PointTemplate[] = [
       en: 'A scenic point for a pause, photos, and neighborhood orientation.',
     },
     description: {
-      ru: 'Отсюда удобно объяснять маршрут дальше: пользователь сразу видит направление прогулки и получает эмоциональную точку входа в историю места.',
+      ru: 'Отсюда удобно начать путь: сразу видно направление прогулки и появляется сильная первая история.',
       en: 'This spot helps frame the route ahead: the user immediately sees the direction of the walk and gets an emotional entry into the area.',
     },
     scheduleLabel: {
@@ -140,7 +140,7 @@ const pointTemplates: PointTemplate[] = [
       en: 'A light stop for coffee, dessert, or a quick bite on the way.',
     },
     description: {
-      ru: 'Такие места делают маршрут живым: здесь удобно переключиться с навигации на атмосферу района и дать пользователю паузу.',
+      ru: 'Такие места делают маршрут живым: здесь удобно переключиться с навигации на атмосферу района и сделать паузу.',
       en: 'Stops like this make the route feel alive: they turn navigation into neighborhood atmosphere and give the user a pause.',
     },
     scheduleLabel: {
@@ -240,7 +240,7 @@ const pointTemplates: PointTemplate[] = [
       en: 'A contemporary stop with an exhibition mood and a strong visual pace.',
     },
     description: {
-      ru: 'Эта точка хорошо связывает прогулочные и развлекательные маршруты: здесь удобно переключать пользователя с классической экскурсии на более живой городской опыт.',
+      ru: 'Эта точка хорошо связывает прогулочные и развлекательные маршруты: классическая экскурсия переходит в более живой городской опыт.',
       en: 'This stop bridges walking and entertainment routes well: it helps shift the user from a classic guided tour into a more vivid urban experience.',
     },
     scheduleLabel: {
@@ -290,8 +290,208 @@ const pointTemplates: PointTemplate[] = [
       en: 'A recognizable urban stage for a short story and a rhythm shift.',
     },
     description: {
-      ru: 'Площадь добавляет маршруту структуру: здесь удобно рассказывать о городе, менять направление и выводить пользователя к следующей сцене прогулки.',
+      ru: 'Площадь добавляет маршруту структуру: здесь удобно рассказать о городе, сменить направление и перейти к следующей сцене прогулки.',
       en: 'The square gives the route structure: it is a natural place to tell a city story, change direction, and lead the user into the next scene of the walk.',
+    },
+    scheduleLabel: {
+      ru: 'Доступно весь день',
+      en: 'Open all day',
+    },
+  },
+  {
+    id: 'archive-house',
+    northMeters: 620,
+    eastMeters: 40,
+    category: 'landmark',
+    rating: 4.6,
+    expectedVisitMinutes: 15,
+    imageUrl: '/illustrations/volga-route.svg',
+    title: {
+      ru: 'Дом городского архива',
+      en: 'City Archive House',
+    },
+    shortDescription: {
+      ru: 'Историческое здание с понятной точкой для короткого рассказа.',
+      en: 'A historic building with a clear stop for a short story.',
+    },
+    description: {
+      ru: 'Такие здания помогают собрать хронику района: архитектура, прежние функции и городские изменения читаются прямо на фасаде.',
+      en: 'Buildings like this help tell the district story: architecture, former uses, and city changes are visible in the facade.',
+    },
+    scheduleLabel: {
+      ru: 'Осмотр снаружи',
+      en: 'Exterior view',
+    },
+  },
+  {
+    id: 'memorial-gate',
+    northMeters: 760,
+    eastMeters: -260,
+    category: 'landmark',
+    rating: 4.7,
+    expectedVisitMinutes: 12,
+    imageUrl: '/illustrations/volga-route.svg',
+    title: {
+      ru: 'Памятные ворота',
+      en: 'Memorial Gate',
+    },
+    shortDescription: {
+      ru: 'Лаконичная историческая точка для смены сцены маршрута.',
+      en: 'A compact historic point that changes the route scene.',
+    },
+    description: {
+      ru: 'Памятные ворота дают маршруту сильный переход: пользователь видит знак места и получает короткий исторический контекст.',
+      en: 'The gate gives the route a strong transition: the user sees a landmark and gets a short historical context.',
+    },
+    scheduleLabel: {
+      ru: 'Доступно весь день',
+      en: 'Open all day',
+    },
+  },
+  {
+    id: 'photo-center',
+    northMeters: 690,
+    eastMeters: 330,
+    category: 'museum',
+    rating: 4.5,
+    expectedVisitMinutes: 21,
+    imageUrl: '/illustrations/landmark-card.svg',
+    title: {
+      ru: 'Центр фотографии',
+      en: 'Photo Center',
+    },
+    shortDescription: {
+      ru: 'Небольшая культурная остановка с визуальным акцентом.',
+      en: 'A small cultural stop with a visual accent.',
+    },
+    description: {
+      ru: 'Центр фотографии добавляет маршруту современный культурный слой и хорошо работает между историческими и прогулочными точками.',
+      en: 'The photo center adds a contemporary cultural layer and works well between historic and walking stops.',
+    },
+    scheduleLabel: {
+      ru: 'Открыто до 19:00',
+      en: 'Open until 7 PM',
+    },
+  },
+  {
+    id: 'craft-coffee',
+    northMeters: -420,
+    eastMeters: 520,
+    category: 'food',
+    rating: 4.8,
+    expectedVisitMinutes: 13,
+    imageUrl: '/illustrations/landmark-card.svg',
+    title: {
+      ru: 'Кофейня ремесленников',
+      en: 'Craft Coffee',
+    },
+    shortDescription: {
+      ru: 'Быстрая точка для кофе и короткой паузы.',
+      en: 'A quick coffee stop for a short pause.',
+    },
+    description: {
+      ru: 'Кофейня удобна как мягкая остановка между длинными переходами: здесь можно восстановить темп и продолжить маршрут.',
+      en: 'The coffee shop is a soft pause between longer walks: it helps reset the pace and continue the route.',
+    },
+    scheduleLabel: {
+      ru: 'Открыто до 22:00',
+      en: 'Open until 10 PM',
+    },
+  },
+  {
+    id: 'city-bakery',
+    northMeters: 180,
+    eastMeters: -620,
+    category: 'food',
+    rating: 4.6,
+    expectedVisitMinutes: 12,
+    imageUrl: '/illustrations/landmark-card.svg',
+    title: {
+      ru: 'Городская пекарня',
+      en: 'City Bakery',
+    },
+    shortDescription: {
+      ru: 'Легкая гастропауза рядом с прогулочными точками.',
+      en: 'A light food pause near walking points.',
+    },
+    description: {
+      ru: 'Пекарня делает маршрут проще для прохождения: короткая остановка, понятный ориентир и приятный повод задержаться.',
+      en: 'The bakery makes the route easier to follow: a short stop, a clear landmark, and a pleasant reason to pause.',
+    },
+    scheduleLabel: {
+      ru: 'Открыто до 21:00',
+      en: 'Open until 9 PM',
+    },
+  },
+  {
+    id: 'river-garden',
+    northMeters: -680,
+    eastMeters: -360,
+    category: 'park',
+    rating: 4.9,
+    expectedVisitMinutes: 25,
+    imageUrl: '/illustrations/volga-route.svg',
+    title: {
+      ru: 'Сад у воды',
+      en: 'Riverside Garden',
+    },
+    shortDescription: {
+      ru: 'Зеленая точка с тихим темпом и хорошим финалом маршрута.',
+      en: 'A green stop with a quiet pace and a good route finale.',
+    },
+    description: {
+      ru: 'Сад у воды хорошо завершает прогулку: здесь меньше шума, больше воздуха и понятная точка для финального аудио.',
+      en: 'The riverside garden works well as a route ending: less noise, more air, and a clear place for the final audio story.',
+    },
+    scheduleLabel: {
+      ru: 'Круглосуточно',
+      en: 'Open 24/7',
+    },
+  },
+  {
+    id: 'pocket-theatre',
+    northMeters: -140,
+    eastMeters: 760,
+    category: 'entertainment',
+    rating: 4.5,
+    expectedVisitMinutes: 20,
+    imageUrl: '/illustrations/landmark-card.svg',
+    title: {
+      ru: 'Камерный театр',
+      en: 'Pocket Theatre',
+    },
+    shortDescription: {
+      ru: 'Живая точка района для вечернего маршрута.',
+      en: 'A lively neighborhood stop for an evening route.',
+    },
+    description: {
+      ru: 'Камерный театр добавляет прогулке событийность: его удобно включать в маршруты, где нужен более активный финал.',
+      en: 'The pocket theatre adds an event-driven feel and fits routes that need a more active ending.',
+    },
+    scheduleLabel: {
+      ru: 'Сеансы до 22:00',
+      en: 'Shows until 10 PM',
+    },
+  },
+  {
+    id: 'play-yard',
+    northMeters: -620,
+    eastMeters: 650,
+    category: 'entertainment',
+    rating: 4.4,
+    expectedVisitMinutes: 16,
+    imageUrl: '/illustrations/landmark-card.svg',
+    title: {
+      ru: 'Двор активностей',
+      en: 'Activity Yard',
+    },
+    shortDescription: {
+      ru: 'Открытая точка для игр, событий и короткой смены ритма.',
+      en: 'An open spot for games, events, and a quick rhythm change.',
+    },
+    description: {
+      ru: 'Эта точка помогает сделать маршрут более живым, особенно если прогулка рассчитана на компанию или семейный формат.',
+      en: 'This stop makes the route livelier, especially for a group or family walking format.',
     },
     scheduleLabel: {
       ru: 'Доступно весь день',
@@ -315,7 +515,7 @@ const routeTemplates: RouteTemplate[] = [
       en: 'First Steps Nearby',
     },
     tagline: {
-      ru: 'Быстрый маршрут для первого знакомства с районом вокруг пользователя.',
+      ru: 'Быстрый маршрут для первого знакомства с районом рядом.',
       en: 'A compact route for getting oriented around the user.',
     },
     description: {
@@ -371,7 +571,7 @@ const routeTemplates: RouteTemplate[] = [
       en: 'A route for resetting, slowing down, and finding quieter places.',
     },
     description: {
-      ru: 'В этом маршруте больше воздуха, меньше суеты и удобные точки, чтобы дать пользователю отдых между историями.',
+      ru: 'В этом маршруте больше воздуха, меньше суеты и удобные точки для отдыха между историями.',
       en: 'This route has more breathing room, less rush, and better places to rest between stories.',
     },
     audienceLabel: {
@@ -423,7 +623,7 @@ const routeTemplates: RouteTemplate[] = [
       en: 'History, food, greenery, and a contemporary stop in one route.',
     },
     description: {
-      ru: 'Маршрут создан для пользователя, который не хочет выбирать одну тему и предпочитает собрать район целиком.',
+      ru: 'Маршрут для тех, кто не хочет выбирать одну тему и предпочитает собрать район целиком.',
       en: 'This route is for users who do not want to commit to a single theme and would rather sample the neighborhood as a whole.',
     },
     audienceLabel: {
@@ -515,8 +715,8 @@ function createExcursion(
     theme: template.theme,
     district: localizeText(
       {
-        ru: 'Рядом с пользователем',
-        en: 'Near the user',
+        ru: 'Рядом с вами',
+        en: 'Near you',
       },
       locale,
     ),

@@ -3,6 +3,7 @@ import {
   formatDuration,
   formatLocaleLabel,
 } from '@/shared/lib/format'
+import './AudioGuidePanel.css'
 
 interface AudioGuidePanelProps {
   stop: RouteStop
@@ -37,7 +38,7 @@ export function AudioGuidePanel({
         <audio controls preload="metadata" src={stop.audio.url ?? undefined} />
       ) : (
         <p className="audio-panel__placeholder">
-          Озвучка для этой точки появится здесь.
+          Сейчас доступно текстовое описание точки.
         </p>
       )}
 

@@ -5,6 +5,7 @@ import {
   formatRating,
 } from '@/shared/lib/format'
 import { SmartPlaceImage } from '@/shared/ui/SmartPlaceImage'
+import './PlaceDetailsCard.css'
 
 interface PlaceDetailsCardProps {
   stop: RouteStop
@@ -24,8 +25,6 @@ export function PlaceDetailsCard({ stop }: PlaceDetailsCardProps) {
           referrerPolicy="no-referrer"
           src={stop.imageUrl}
           title={stop.title}
-          wikidataId={stop.wikidataId}
-          wikipediaTitle={stop.wikipediaTitle}
         />
       </div>
 
@@ -34,7 +33,7 @@ export function PlaceDetailsCard({ stop }: PlaceDetailsCardProps) {
           <div>
             <p className="eyebrow">{formatPointCategory(stop.category)}</p>
             <h2 className="details-card__title">{stop.title}</h2>
-            <p className="page-description details-card__lead">{stop.shortDescription}</p>
+            <p className="details-card__lead">{stop.shortDescription}</p>
           </div>
         </div>
 

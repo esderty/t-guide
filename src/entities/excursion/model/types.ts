@@ -30,8 +30,6 @@ export interface RouteStop {
   description: string
   coordinates: GeoPoint
   imageUrl: string
-  wikidataId?: string
-  wikipediaTitle?: string
   expectedVisitMinutes: number
   rating: number
   scheduleLabel: string
@@ -46,15 +44,12 @@ export interface NearbyPoint {
   description: string
   coordinates: GeoPoint
   imageUrl: string
-  wikipediaTitle?: string
-  wikidataId?: string
   expectedVisitMinutes: number
   rating: number
   scheduleLabel: string
   distanceMeters: number
   addressLabel?: string
   googleMapsUrl?: string
-  source?: 'mock' | 'osm'
 }
 
 export interface Excursion {

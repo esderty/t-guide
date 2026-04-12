@@ -1,129 +1,158 @@
-# Global Audio Guide
+# T Guide
 
-Geo-first audio guide MVP built with React, TypeScript, Vite, Leaflet, and OpenStreetMap.
+Frontend client for a geo-based audio guide. The app is built as a backend-ready React application: UI screens consume one API contract, while the current repository uses mock data until real endpoints are available.
 
-The app starts from the user's current location, shows nearby places on a live map, generates ready-to-use routes from those places, and opens a route screen with map navigation, point details, and an audio guide panel.
+## Current Scope
 
-## What Works Now
+- Home page with user geolocation, nearby points, category filtering, radius filtering, search, and map navigation.
+- Route catalog with ready-made excursions filtered by route theme and duration.
+- Route details page with route map, stop list, selected place card, and audio guide panel.
+- Sign-in and registration screens prepared for account-based flows.
+- Profile page with editable profile fields, saved routes, and route history.
+- Shared API contract for future backend integration.
+- Mock API implementation matching the frontend data flow.
+- Component-local CSS files placed next to page, widget, entity, and feature components.
 
-- Requests user geolocation on app open.
-- Shows nearby places around the user on an OpenStreetMap map.
-- Supports category filtering:
-  - `All places`
-  - `Museums`
-  - `Entertainment`
-  - `History`
-  - `Food`
-  - `Nature`
-- Supports radius filtering:
-  - `1 km`
-  - `3 km`
-  - `5 km`
-- Lets the user cycle through nearby places with previous/next controls.
-- Builds dynamic route suggestions from the currently selected nearby places.
-- Shows the first 6 routes on the home page and the full list on the routes page.
-- Filters routes by theme and duration.
-- Opens a route details page with:
-  - route map
-  - route stops list
-  - selected place details
-  - audio guide block
-- Tries to build a real walking path between route points using OSM routing.
-- Falls back safely to straight segments if the routing service is unavailable.
-- Uses resilient place images:
-  - original image if available
-  - OSM static map snapshot if image is broken or missing
-  - local placeholder as final fallback
+## User Roles Covered In UI
 
-## Current User Flow
+- Guest: can use geolocation, view nearby points, open route catalog, start excursions, choose language context, sign in, and register.
+- Authenticated user: can view and edit profile, open saved routes, continue route history, and use profile-based navigation.
+- Admin: included in the shared role model for backend compatibility. Admin screens are not implemented yet.
 
-1. User opens the app.
-2. The app requests geolocation.
-3. The map centers on the user.
-4. Nearby places are loaded for the selected category and radius.
-5. The user changes category or radius if needed.
-6. The app generates route suggestions from the visible nearby places.
-7. The user opens a route.
-8. The route page shows the route map, stops, selected place details, and audio guide UI.
+## Backend Integration Point
 
-## Route Logic
+The frontend talks through `src/shared/api/client.ts`.
 
-Routes are generated dynamically from the current discovery context:
-
-- selected nearby category
-- selected radius
-- user center point
-- nearby places returned by OSM
-
-The app generates:
-
-- category-specific routes
-- mixed routes with different stop combinations
-- short and extended route variants when enough points exist
-
-## Tech Stack
-
-- React
-- TypeScript
-- Vite
-- React Router
-- Leaflet
-- OpenStreetMap
-
-## Environment
-
-The project currently uses OpenStreetMap by default.
-
-Example `.env.local`:
+Mock mode is active when:
 
 ```env
-VITE_MAP_PROVIDER=osm
+VITE_USE_MOCK_API=true
 ```
 
-## Getting Started
+or when `VITE_API_URL` is not set.
 
-Install dependencies:
+Production API mode is selected with:
 
-```bash
-npm install
+```env
+VITE_USE_MOCK_API=false
+VITE_API_URL=https://your-api.example.com/api
 ```
 
-Run the development server:
+Expected frontend endpoints:
 
-```bash
-npm run dev
+```text
+POST /discovery/feed
+POST /routes/catalog
+POST /routes/:slug
+GET  /auth/session
+POST /auth/sign-in
+POST /auth/register
+POST /auth/sign-out
+PATCH /profile
+GET  /profile/overview
 ```
 
-Run checks:
+## Main Data Contracts
 
-```bash
-npx tsc --noEmit
-npm run lint
-npm run build
+Contracts live in:
+
+```text
+src/shared/api/contracts.ts
 ```
+
+Key DTO groups:
+
+- `SessionDto`, `UserProfileDto`, `UserRole`
+- `SignInRequestDto`, `RegisterRequestDto`, `UpdateProfileRequestDto`
+- `DiscoveryFeedRequest`, `DiscoveryFeedDto`
+- `RouteCatalogRequest`, `RouteDetailsRequest`
+- `ProfileOverviewDto`, `RouteHistoryItemDto`
+
+Domain models live in:
+
+```text
+src/entities/excursion/model/types.ts
+```
+
+Core models:
+
+- `Excursion`
+- `RouteStop`
+- `NearbyPoint`
+- `AudioStory`
+- `GeoPoint`
 
 ## Project Structure
 
 ```text
 src/
-  app/                App shell, router, global styles
-  pages/              Home, routes list, route details, not found
-  widgets/            Larger UI blocks such as route overview and catalog
-  features/           Map, audio guide, place details, filters
-  entities/           Domain models, route generation, nearby places, API helpers
-  shared/             Config, formatters, reusable UI, common helpers
+  app/
+    App.tsx
+    App.css
+    providers/
+      AppRouter.tsx
+      AuthProvider.tsx
+      auth-context.ts
+      useAuth.ts
+    styles/
+      global.css
+      tokens.css
+
+  pages/
+    home/
+    excursions/
+    excursion/
+    sign-in/
+    profile/
+    not-found/
+
+  widgets/
+    excursion-catalog/
+    route-overview/
+
+  features/
+    audio-guide/
+    place-details/
+    route-map/
+
+  entities/
+    excursion/
+    place/
+
+  shared/
+    api/
+    config/
+    lib/
+    ui/
 ```
 
-## Current Limitations
+## Styling
 
-- The audio guide panel is UI-ready, but real generated audio is not connected yet.
-- Nearby places depend on OSM data quality in the current location.
-- Walking route building depends on external OSM routing availability.
-- Backend integration is not connected yet; the current version is frontend-first.
+Global design tokens are stored in:
 
-## Next Steps
+```text
+src/app/styles/tokens.css
+```
 
-- Connect backend APIs for nearby places and route generation.
-- Add real AI audio narration per place and per language.
-- Improve route ranking and route editing.
-- Add route completion, ratings, and saved progress.
+Only base primitives and reusable utility classes are stored in:
+
+```text
+src/app/styles/global.css
+```
+
+Component-specific styles are colocated with components:
+
+```text
+Component.tsx
+Component.css
+```
+
+## Scripts
+
+```bash
+npm install
+npm run dev
+npm run lint
+npm run build
+npx tsc --noEmit
+```

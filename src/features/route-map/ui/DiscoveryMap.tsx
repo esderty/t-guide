@@ -1,19 +1,20 @@
 ﻿import { useEffect, useMemo, useRef, useState } from 'react'
 import * as L from 'leaflet'
+import { Link } from 'react-router-dom'
 
 import type {
   GeoPoint,
   NearbyPoint,
   PointCategory,
+  RouteStop,
 } from '@/entities/excursion/model/types'
-import { buildGoogleMapsUrl } from '@/entities/place/api/osm-nearby'
 import {
   buildOsmWalkingRouteGeometryFromPoints,
   createLineGeometryFromPoints,
   getBoundsFromGeometry,
   getBoundsFromPoints,
   toLngLat,
-  type YandexRouteGeometry,
+  type RouteGeometry,
 } from '@/features/route-map/lib/route-geometry'
 import {
   applyLeafletLocation,
@@ -22,10 +23,14 @@ import {
   createGuidePolyline,
   createLeafletMap,
   createPoiIcon,
+  createSegmentedRoutePolyline,
   createUserIcon,
   getPointCategoryIcon,
 } from '@/features/route-map/lib/leaflet-map'
 import { appMapConfig } from '@/shared/config/map'
+import { appRoutes } from '@/shared/config/routes'
+import { buildGoogleMapsUrl } from '@/shared/lib/maps'
+import './DiscoveryMap.css'
 
 export interface DiscoveryCategoryOption {
   id: PointCategory | 'all'
@@ -39,16 +44,23 @@ export interface DiscoveryRadiusOption {
 
 interface DiscoveryMapProps {
   activeCategory: PointCategory | 'all'
+  canSaveDraftRoute?: boolean
   categoryOptions: DiscoveryCategoryOption[]
+  draftStops?: RouteStop[]
+  draftRouteNotice?: string | null
   embedded?: boolean
   emptyMessage: string
+  fixedRouteStops?: RouteStop[]
   geolocationError: string | null
   isLoading: boolean
   loadError: string | null
   nearbyPoints: NearbyPoint[]
+  onAddPointToDraft?: (point: NearbyPoint) => void
   onBuildRoute: (pointId: string) => void
   onChangeRadius: (radiusMeters: number) => void
+  onClearDraftRoute?: () => void
   onLocateUser: () => void
+  onSaveDraftRoute?: () => void
   onSearchQueryChange: (value: string) => void
   onSelectCategory: (category: PointCategory | 'all') => void
   onSelectNextPoint: () => void
@@ -68,18 +80,38 @@ const locateZoom = 15.5
 
 type SelectionSource = 'marker' | 'navigation' | 'route'
 
+function preservePageScroll() {
+  const currentScrollY = window.scrollY
+
+  window.requestAnimationFrame(() => {
+    if (window.scrollY !== currentScrollY) {
+      window.scrollTo({
+        top: currentScrollY,
+        behavior: 'auto',
+      })
+    }
+  })
+}
+
 export function DiscoveryMap({
   activeCategory,
+  canSaveDraftRoute = true,
   categoryOptions,
+  draftStops = [],
+  draftRouteNotice = null,
   embedded = false,
   emptyMessage,
+  fixedRouteStops = [],
   geolocationError,
   isLoading,
   loadError,
   nearbyPoints,
+  onAddPointToDraft,
   onBuildRoute,
   onChangeRadius,
+  onClearDraftRoute,
   onLocateUser,
+  onSaveDraftRoute,
   onSearchQueryChange,
   onSelectCategory,
   onSelectNextPoint,
@@ -103,7 +135,14 @@ export function DiscoveryMap({
   const [mapLoadError, setMapLoadError] = useState<string | null>(null)
   const [openMenu, setOpenMenu] = useState<'category' | 'radius' | null>(null)
   const [guideRoute, setGuideRoute] = useState<{
-    geometry: YandexRouteGeometry | null
+    geometry: RouteGeometry | null
+    signature: string
+  }>({
+    geometry: null,
+    signature: '',
+  })
+  const [draftRoute, setDraftRoute] = useState<{
+    geometry: RouteGeometry | null
     signature: string
   }>({
     geometry: null,
@@ -127,6 +166,21 @@ export function DiscoveryMap({
   const activeRadiusLabel =
     radiusOptions.find((option) => option.value === radiusMeters)?.label ?? `${radiusMeters / 1000} км`
   const canNavigatePoints = nearbyPoints.length > 1
+  const visibleDraftStops = draftStops.length > 0 ? draftStops : fixedRouteStops
+  const visibleDraftPointIds = useMemo(
+    () => new Set(visibleDraftStops.map(getSourcePointId)),
+    [visibleDraftStops],
+  )
+  const draftSignature = useMemo(() => {
+    const points = [
+      ...(userPosition ? [userPosition] : []),
+      ...visibleDraftStops.map((stop) => stop.coordinates),
+    ]
+
+    return points
+      .map((point) => `${point.lat.toFixed(5)}:${point.lng.toFixed(5)}`)
+      .join('|')
+  }, [userPosition, visibleDraftStops])
   const guideSignature =
     userPosition && guidedPoint
       ? `${guidedPoint.id}:${userPosition.lat.toFixed(5)}:${userPosition.lng.toFixed(5)}`
@@ -142,9 +196,25 @@ export function DiscoveryMap({
     guideRoute.signature === guideSignature && guideRoute.geometry
       ? guideRoute.geometry
       : fallbackGuideGeometry
+  const draftFallbackGeometry = useMemo(() => {
+    const points = [
+      ...(userPosition ? [userPosition] : []),
+      ...visibleDraftStops.map((stop) => stop.coordinates),
+    ]
+
+    return points.length > 1 ? createLineGeometryFromPoints(points) : null
+  }, [userPosition, visibleDraftStops])
+  const draftGeometry =
+    draftRoute.signature === draftSignature && draftRoute.geometry
+      ? draftRoute.geometry
+      : draftFallbackGeometry
   const guideBounds = useMemo(
     () => (guideGeometry ? getBoundsFromGeometry(guideGeometry) : null),
     [guideGeometry],
+  )
+  const draftBounds = useMemo(
+    () => (draftGeometry ? getBoundsFromGeometry(draftGeometry) : null),
+    [draftGeometry],
   )
 
   useEffect(() => {
@@ -234,9 +304,63 @@ export function DiscoveryMap({
   }, [guideSignature, guidedPoint, userPosition])
 
   useEffect(() => {
+    const controller = new AbortController()
+
+    async function loadDraftRoute() {
+      const points = [
+        ...(userPosition ? [userPosition] : []),
+        ...visibleDraftStops.map((stop) => stop.coordinates),
+      ]
+
+      if (points.length < 2) {
+        queueMicrotask(() => {
+          setDraftRoute({ geometry: null, signature: '' })
+        })
+        return
+      }
+
+      try {
+        const result = await buildOsmWalkingRouteGeometryFromPoints(
+          points,
+          controller.signal,
+        )
+
+        if (controller.signal.aborted) {
+          return
+        }
+
+        setDraftRoute({
+          geometry: result.geometry,
+          signature: draftSignature,
+        })
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          console.error(error)
+        }
+      }
+    }
+
+    void loadDraftRoute()
+
+    return () => {
+      controller.abort()
+    }
+  }, [draftSignature, userPosition, visibleDraftStops])
+
+  useEffect(() => {
     const map = mapRef.current
 
     if (!map) {
+      return
+    }
+
+    if (draftBounds && visibleDraftStops.length) {
+      applyLeafletLocation(map, {
+        bounds: draftBounds,
+        padding: mapPadding,
+        duration: 700,
+        easing: 'ease-in-out',
+      })
       return
     }
 
@@ -271,7 +395,7 @@ export function DiscoveryMap({
       duration: 850,
       easing: 'ease-in-out',
     })
-  }, [guideBounds, nearbyPoints.length, pointsBounds, routeTargetId, userPosition])
+  }, [draftBounds, guideBounds, nearbyPoints.length, pointsBounds, routeTargetId, userPosition, visibleDraftStops.length])
 
   useEffect(() => {
     const overlay = overlayRef.current
@@ -287,24 +411,41 @@ export function DiscoveryMap({
       createDiscoveryRadiusCircle(userPosition, radiusMeters).addTo(overlay)
     }
 
-    if (guideGeometry) {
+    if (guideGeometry && !draftGeometry) {
       createGuidePolyline(guideGeometry).addTo(overlay)
+    }
+
+    if (draftGeometry) {
+      createSegmentedRoutePolyline(draftGeometry).addTo(overlay)
     }
 
     nearbyPoints.forEach((point) => {
       const googleMapsUrl = buildGoogleMapsUrl(point.coordinates, userPosition)
+      const isInDraft = visibleDraftPointIds.has(point.id)
       const marker = L.marker([point.coordinates.lat, point.coordinates.lng], {
-        icon: createPoiIcon(point, point.id === selectedPointId),
+        icon: createPoiIcon(point, point.id === selectedPointId, isInDraft),
         title: buildMarkerTitle(point),
       })
         .bindPopup(
           buildPopupContent({
             googleMapsUrl,
             onBuildRoute: () => {
+              preservePageScroll()
               selectionSourceRef.current = 'route'
               onSelectPoint(point.id)
               onBuildRoute(point.id)
             },
+            onAddPointToDraft: onAddPointToDraft
+              ? () => {
+                  preservePageScroll()
+                  selectionSourceRef.current = 'route'
+                  onSelectPoint(point.id)
+                  onBuildRoute(point.id)
+                  onAddPointToDraft(point)
+                }
+              : undefined,
+            canAddToDraft: Boolean(onAddPointToDraft && !isInDraft && draftStops.length < 6),
+            isInDraft,
             point,
           }),
           {
@@ -313,6 +454,7 @@ export function DiscoveryMap({
           },
         )
         .on('click', () => {
+          preservePageScroll()
           selectionSourceRef.current = 'marker'
           onSelectPoint(point.id)
           marker.openPopup()
@@ -328,7 +470,7 @@ export function DiscoveryMap({
         title: 'Ваше местоположение',
       }).addTo(overlay)
     }
-  }, [guideGeometry, nearbyPoints, onBuildRoute, onSelectPoint, radiusMeters, selectedPointId, userPosition])
+  }, [draftGeometry, draftStops.length, guideGeometry, nearbyPoints, onAddPointToDraft, onBuildRoute, onSelectPoint, radiusMeters, selectedPointId, userPosition, visibleDraftPointIds])
 
   useEffect(() => {
     nearbyPoints.forEach((point) => {
@@ -338,9 +480,9 @@ export function DiscoveryMap({
         return
       }
 
-      marker.setIcon(createPoiIcon(point, point.id === selectedPointId))
+      marker.setIcon(createPoiIcon(point, point.id === selectedPointId, visibleDraftPointIds.has(point.id)))
     })
-  }, [nearbyPoints, selectedPointId])
+  }, [nearbyPoints, selectedPointId, visibleDraftPointIds])
 
   useEffect(() => {
     const map = mapRef.current
@@ -515,6 +657,40 @@ export function DiscoveryMap({
         {!isLoading && !mapLoadError && !loadError && nearbyPoints.length === 0 ? (
           <div className="discovery-map__overlay-note">{emptyMessage}</div>
         ) : null}
+        {draftRouteNotice ? (
+          <div className="discovery-map__overlay-note discovery-map__overlay-note--success">
+            {draftRouteNotice}
+          </div>
+        ) : null}
+        {visibleDraftStops.length > 0 ? (
+          <div className="discovery-map__draft-actions">
+            <button
+              className="discovery-map__draft-button"
+              onClick={onClearDraftRoute}
+              type="button"
+            >
+              Сбросить
+            </button>
+            {draftStops.length > 1 ? (
+              canSaveDraftRoute ? (
+                <button
+                  className="discovery-map__draft-button discovery-map__draft-button--primary"
+                  onClick={onSaveDraftRoute}
+                  type="button"
+                >
+                  Сохранить
+                </button>
+              ) : (
+                <Link
+                  className="discovery-map__draft-button discovery-map__draft-button--primary discovery-map__draft-button--link"
+                  to={appRoutes.signIn}
+                >
+                  Войти
+                </Link>
+              )
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       <div className="discovery-map__navigation">
@@ -555,8 +731,14 @@ export function DiscoveryMap({
 function buildPopupContent({
   point,
   googleMapsUrl,
+  canAddToDraft,
+  isInDraft,
+  onAddPointToDraft,
   onBuildRoute,
 }: {
+  canAddToDraft: boolean
+  isInDraft: boolean
+  onAddPointToDraft?: () => void
   point: NearbyPoint
   googleMapsUrl: string
   onBuildRoute: () => void
@@ -598,8 +780,24 @@ function buildPopupContent({
   })
   actions.appendChild(routeButton)
 
+  const addButton = document.createElement('button')
+  addButton.className = `map-popup__button map-popup__button--accent${isInDraft ? ' map-popup__button--active' : ''}`
+  addButton.disabled = !canAddToDraft
+  addButton.type = 'button'
+  addButton.textContent = isInDraft ? 'В маршруте' : 'Добавить'
+  addButton.addEventListener('click', (event) => {
+    event.preventDefault()
+    event.stopPropagation()
+    onAddPointToDraft?.()
+  })
+  actions.appendChild(addButton)
+
   container.appendChild(actions)
   return container
+}
+
+function getSourcePointId(stop: RouteStop) {
+  return stop.id.replace(/-draft-stop.*$/, '')
 }
 
 

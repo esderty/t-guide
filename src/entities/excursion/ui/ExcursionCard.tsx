@@ -1,8 +1,10 @@
 ﻿import type { CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 
+import { useAuth } from '@/app/providers/useAuth'
 import type { Excursion } from '@/entities/excursion/model/types'
 import { buildStaticPlaceImageUrl } from '@/entities/place/lib/place-images'
+import { useUserRoutes } from '@/features/user-routes/model/useUserRoutes'
 import { appRoutes } from '@/shared/config/routes'
 import { buildRoutePlaceholderImage } from '@/shared/lib/placeholder-images'
 import {
@@ -13,42 +15,65 @@ import {
   formatTheme,
 } from '@/shared/lib/format'
 import { ResilientImage } from '@/shared/ui/ResilientImage'
+import './ExcursionCard.css'
 
 interface ExcursionCardProps {
   excursion: Excursion
 }
 
 export function ExcursionCard({ excursion }: ExcursionCardProps) {
+  const { session } = useAuth()
+  const {
+    isRouteSaved,
+    shareRoute,
+    toggleSavedRoute,
+  } = useUserRoutes()
+  const isAuthenticated = Boolean(session?.isAuthenticated && session.profile)
   const firstStop = excursion.stops[0]
+  const routeUrl = appRoutes.excursion(excursion.slug)
+  const isSaved = isRouteSaved(excursion.slug)
   const coverFallbacks = firstStop
     ? [
         buildStaticPlaceImageUrl(firstStop.coordinates, firstStop.category, 15),
-        '/illustrations/landmark-card.svg',
+        buildRoutePlaceholderImage(excursion.theme),
       ]
-    : ['/illustrations/landmark-card.svg']
+    : [buildRoutePlaceholderImage(excursion.theme)]
+  const routePlaceholder = buildRoutePlaceholderImage(excursion.theme)
+  const coverSrc =
+    excursion.coverImageUrl && !excursion.coverImageUrl.startsWith('/illustrations/')
+      ? excursion.coverImageUrl
+      : routePlaceholder
 
   return (
-    <Link className="card" to={appRoutes.excursion(excursion.slug)}>
-      <div
-        className="card__cover card__cover--gradient"
-        style={{ '--route-accent': excursion.routeColor } as CSSProperties}
+    <article className="card">
+      <Link
+        aria-label={`Открыть маршрут ${excursion.title}`}
+        className="card__cover-link"
+        to={routeUrl}
       >
-        <ResilientImage
-          alt={excursion.title}
-          fallbackSrcs={coverFallbacks}
-          loading="lazy"
-          placeholderSrc={buildRoutePlaceholderImage(excursion.theme)}
-          referrerPolicy="no-referrer"
-          src={excursion.coverImageUrl || undefined}
-        />
-        <span className="card__theme-badge">{formatTheme(excursion.theme)}</span>
-      </div>
+        <div
+          className="card__cover card__cover--gradient"
+          style={{ '--route-accent': excursion.routeColor } as CSSProperties}
+        >
+          <ResilientImage
+            alt={excursion.title}
+            fallbackSrcs={coverFallbacks}
+            loading="lazy"
+            placeholderSrc={routePlaceholder}
+            referrerPolicy="no-referrer"
+            src={coverSrc}
+          />
+          <span className="card__theme-badge">{formatTheme(excursion.theme)}</span>
+        </div>
+      </Link>
 
       <div className="card__content">
         <div className="card__title-row">
           <div>
-            <h3 className="card__title">{excursion.title}</h3>
-            <p className="page-description">{excursion.tagline}</p>
+            <Link className="card__title-link" to={routeUrl}>
+              <h3 className="card__title">{excursion.title}</h3>
+            </Link>
+            <p className="card__tagline">{excursion.tagline}</p>
           </div>
           <span className="card__tag">{formatDifficulty(excursion.difficulty)}</span>
         </div>
@@ -83,7 +108,32 @@ export function ExcursionCard({ excursion }: ExcursionCardProps) {
             <strong>Финиш:</strong> {excursion.finishLabel}
           </span>
         </div>
+
+        <div className="card__actions">
+          <Link className="button button--primary" to={routeUrl}>
+            Открыть
+          </Link>
+          {isAuthenticated ? (
+            <button
+              aria-pressed={isSaved}
+              className={`card__icon-button${isSaved ? ' card__icon-button--active' : ''}`}
+              onClick={() => toggleSavedRoute(excursion)}
+              type="button"
+            >
+              <span aria-hidden="true">{isSaved ? '♥' : '♡'}</span>
+              <span>{isSaved ? 'Сохранено' : 'Сохранить'}</span>
+            </button>
+          ) : null}
+          <button
+            className="card__icon-button"
+            onClick={() => void shareRoute(excursion)}
+            type="button"
+          >
+            <span aria-hidden="true">↗</span>
+            <span>Поделиться</span>
+          </button>
+        </div>
       </div>
-    </Link>
+    </article>
   )
 }

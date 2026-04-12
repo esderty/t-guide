@@ -1,0 +1,131 @@
+.excursion-page__hero {
+  display: grid;
+  gap: 22px;
+  padding: 32px;
+}
+
+.excursion-page__hero-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.excursion-page__hero-copy {
+  display: grid;
+  gap: 14px;
+}
+
+.excursion-page__difficulty {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 221, 45, 0.18);
+  color: var(--color-accent-ink);
+  font-weight: 800;
+}
+
+.excursion-page__hero-meta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.excursion-page__hero-stat {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--color-line);
+  border-radius: 20px;
+  background: var(--color-bg-elevated);
+}
+
+.excursion-page__hero-value {
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.excursion-page__hero-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.excursion-page__hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.excursion-page__hero-note {
+  margin: 0;
+  color: var(--color-danger);
+}
+
+.excursion-page__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(340px, 0.92fr);
+  gap: 24px;
+}
+
+.excursion-page__column {
+  display: grid;
+  gap: 20px;
+  align-content: start;
+}
+
+@media (max-width: 1080px) {
+  .excursion-page__hero-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .excursion-page__layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .excursion-page__hero {
+    padding: 24px;
+    gap: 18px;
+  }
+
+  .excursion-page__hero-main {
+    flex-direction: column;
+  }
+
+  .excursion-page__hero-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .excursion-page__hero-stat {
+    gap: 6px;
+    padding: 14px;
+  }
+
+  .excursion-page__hero-value {
+    font-size: 1.02rem;
+  }
+
+  .excursion-page__hero-actions .button {
+    flex: 1 1 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .excursion-page__hero {
+    padding: 18px;
+  }
+
+  .excursion-page__hero-copy {
+    gap: 12px;
+  }
+
+  .excursion-page__hero-chips,
+  .excursion-page__hero-actions {
+    gap: 8px;
+  }
+}

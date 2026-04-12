@@ -1,6 +1,7 @@
 ﻿import type { GeoPoint, RouteStop } from '@/entities/excursion/model/types'
 import { RouteStopList } from '@/entities/place/ui/RouteStopList'
 import { RouteMap } from '@/features/route-map/ui/RouteMap'
+import './RouteOverview.css'
 
 interface RouteOverviewProps {
   stops: RouteStop[]

@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --color-bg: #f4f6fb;
+  --color-bg-elevated: #ffffff;
+  --color-bg-soft: #f7f8fc;
+  --color-bg-muted: #eef1f7;
+  --color-text: #1f2533;
+  --color-text-secondary: #5d6679;
+  --color-text-tertiary: #7c879a;
+  --color-line: #e6e9f0;
+  --color-line-strong: #d8dce5;
+  --color-accent: #ffdd2d;
+  --color-accent-strong: #fcc521;
+  --color-accent-ink: #4f3c00;
+  --color-brand: #1f8a70;
+  --color-brand-strong: #0f766e;
+  --color-brand-soft: #e8faf4;
+  --color-danger: #c2514b;
+  --color-danger-soft: #fff0ee;
+  --shadow-card: 0 18px 38px rgba(31, 37, 51, 0.07);
+  --shadow-card-strong: 0 28px 56px rgba(31, 37, 51, 0.11);
+  --shadow-pill: 0 10px 24px rgba(31, 37, 51, 0.08);
+  --radius-2xl: 32px;
+  --radius-xl: 28px;
+  --radius-lg: 22px;
+  --radius-md: 16px;
+  --radius-sm: 12px;
+  --radius-pill: 999px;
+  --container-width: 1440px;
+  font-family: 'Inter', sans-serif;
+  color: var(--color-text);
+  background:
+    radial-gradient(circle at top left, rgba(255, 221, 45, 0.18), transparent 24%),
+    radial-gradient(circle at top right, rgba(255, 247, 200, 0.6), transparent 16%),
+    linear-gradient(180deg, #fdfdfd 0%, #f4f6fb 100%);
+}

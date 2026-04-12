@@ -3,7 +3,7 @@
 export type LngLat = [number, number]
 export type LngLatBounds = [LngLat, LngLat]
 
-export type YandexRouteGeometry =
+export type RouteGeometry =
   | {
       type: 'LineString'
       coordinates: LngLat[]
@@ -34,7 +34,7 @@ interface NearestStopResult {
 }
 
 export interface WalkingRouteBuildResult {
-  geometry: YandexRouteGeometry | null
+  geometry: RouteGeometry | null
   status: 'walking' | 'partial' | 'fallback'
 }
 
@@ -66,7 +66,7 @@ export function getBoundsFromPoints(points: GeoPoint[]): LngLatBounds {
   return getBoundsFromLngLat(points.map((point) => toLngLat(point)))
 }
 
-export function getBoundsFromGeometry(geometry: YandexRouteGeometry): LngLatBounds {
+export function getBoundsFromGeometry(geometry: RouteGeometry): LngLatBounds {
   if (geometry.type === 'LineString') {
     return getBoundsFromLngLat(geometry.coordinates)
   }
@@ -74,76 +74,14 @@ export function getBoundsFromGeometry(geometry: YandexRouteGeometry): LngLatBoun
   return getBoundsFromLngLat(geometry.coordinates.flat())
 }
 
-export function createFallbackRouteGeometry(stops: RouteStop[]): YandexRouteGeometry {
+export function createFallbackRouteGeometry(stops: RouteStop[]): RouteGeometry {
   return createLineGeometryFromPoints(stops.map((stop) => stop.coordinates))
 }
 
-export function createLineGeometryFromPoints(points: GeoPoint[]): YandexRouteGeometry {
+export function createLineGeometryFromPoints(points: GeoPoint[]): RouteGeometry {
   return {
     type: 'LineString',
     coordinates: points.map((point) => toLngLat(point)),
-  }
-}
-
-export async function buildWalkingRouteGeometry(
-  ymaps3: {
-    route?: (options: {
-      type: 'walking'
-      points: LngLat[]
-      bounds?: boolean
-    }) => Promise<Array<{ toRoute?: () => { geometry?: unknown } }>>
-  },
-  stops: RouteStop[],
-): Promise<WalkingRouteBuildResult> {
-  if (stops.length < 2 || !ymaps3.route) {
-    return {
-      geometry: null,
-      status: 'fallback',
-    }
-  }
-
-  try {
-    const segmentGeometries = await Promise.all(
-      stops.slice(0, -1).map(async (stop, index) => {
-        const nextStop = stops[index + 1]
-
-        try {
-          const routes = await ymaps3.route?.({
-            type: 'walking',
-            points: [toLngLat(stop.coordinates), toLngLat(nextStop.coordinates)],
-            bounds: true,
-          })
-
-          const geometry = routes?.[0]?.toRoute?.()?.geometry as
-            | YandexRouteGeometry
-            | undefined
-
-          if (!isValidRouteGeometry(geometry)) {
-            return {
-              geometry: createSegmentFallbackGeometry(stop.coordinates, nextStop.coordinates),
-              resolved: false,
-            }
-          }
-
-          return {
-            geometry,
-            resolved: true,
-          }
-        } catch {
-          return {
-            geometry: createSegmentFallbackGeometry(stop.coordinates, nextStop.coordinates),
-            resolved: false,
-          }
-        }
-      }),
-    )
-
-    return toWalkingRouteBuildResult(segmentGeometries)
-  } catch {
-    return {
-      geometry: null,
-      status: 'fallback',
-    }
   }
 }
 
@@ -184,7 +122,7 @@ export async function buildOsmWalkingRouteGeometryFromPoints(
             geometry: {
               type: 'LineString',
               coordinates: geometry,
-            } satisfies YandexRouteGeometry,
+            } satisfies RouteGeometry,
             resolved: true,
           }
         } catch (error) {
@@ -341,26 +279,14 @@ function getBoundsFromLngLat(points: LngLat[]): LngLatBounds {
   ]
 }
 
-function createSegmentFallbackGeometry(from: GeoPoint, to: GeoPoint): YandexRouteGeometry {
+function createSegmentFallbackGeometry(from: GeoPoint, to: GeoPoint): RouteGeometry {
   return {
     type: 'LineString',
     coordinates: [toLngLat(from), toLngLat(to)],
   }
 }
 
-function isValidRouteGeometry(geometry: YandexRouteGeometry | undefined): geometry is YandexRouteGeometry {
-  if (!geometry) {
-    return false
-  }
-
-  if (geometry.type === 'LineString') {
-    return geometry.coordinates.length > 1
-  }
-
-  return geometry.coordinates.some((segment) => segment.length > 1)
-}
-
-function mergeSegmentGeometries(geometries: YandexRouteGeometry[]): YandexRouteGeometry | null {
+function mergeSegmentGeometries(geometries: RouteGeometry[]): RouteGeometry | null {
   const segments = geometries.flatMap((geometry) =>
     geometry.type === 'LineString' ? [geometry.coordinates] : geometry.coordinates,
   )
@@ -385,7 +311,7 @@ function mergeSegmentGeometries(geometries: YandexRouteGeometry[]): YandexRouteG
 }
 
 function toWalkingRouteBuildResult(
-  segments: Array<{ geometry: YandexRouteGeometry; resolved: boolean }>,
+  segments: Array<{ geometry: RouteGeometry; resolved: boolean }>,
 ): WalkingRouteBuildResult {
   const resolvedSegments = segments.filter((segment) => segment.resolved)
 

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 
-import { useDiscoveryRoutes } from '@/entities/excursion/model/useDiscoveryRoutes'
 import type { ExcursionTheme } from '@/entities/excursion/model/types'
+import { useRoutesCatalog } from '@/entities/excursion/model/useRoutesCatalog'
 import { getStoredDiscoveryContext } from '@/shared/lib/discovery-context'
 import {
   formatDistance,
@@ -9,6 +9,7 @@ import {
   formatTheme,
 } from '@/shared/lib/format'
 import { ExcursionCatalog } from '@/widgets/excursion-catalog/ui/ExcursionCatalog'
+import './ExcursionsPage.css'
 
 const themeOptions: Array<ExcursionTheme | 'all'> = [
   'all',
@@ -18,6 +19,7 @@ const themeOptions: Array<ExcursionTheme | 'all'> = [
   'fun',
   'mixed',
 ]
+
 const durationOptions = [30, 45, 60, 90, 120]
 
 export function ExcursionsPage() {
@@ -25,7 +27,11 @@ export function ExcursionsPage() {
   const [activeTheme, setActiveTheme] = useState<ExcursionTheme | 'all'>('all')
   const [maxDuration, setMaxDuration] = useState<number | null>(null)
 
-  const { excursions, isLoading } = useDiscoveryRoutes({
+  const {
+    error,
+    isLoading,
+    routes,
+  } = useRoutesCatalog({
     activePointCategory: storedContext.activePointCategory,
     center: storedContext.center,
     locale: storedContext.locale,
@@ -34,13 +40,13 @@ export function ExcursionsPage() {
 
   const filteredRoutes = useMemo(
     () =>
-      excursions.filter((excursion) => {
+      routes.filter((excursion) => {
         const matchesTheme = activeTheme === 'all' || excursion.theme === activeTheme
         const matchesDuration = maxDuration === null || excursion.durationMinutes <= maxDuration
 
         return matchesTheme && matchesDuration
       }),
-    [activeTheme, excursions, maxDuration],
+    [activeTheme, maxDuration, routes],
   )
 
   const totalDistance = filteredRoutes.reduce(
@@ -48,81 +54,129 @@ export function ExcursionsPage() {
     0,
   )
 
+  if (isLoading) {
+    return <RoutesSkeleton />
+  }
+
+  if (error) {
+    return (
+      <section className="status-card">
+        <h1 className="status-card__title">Не удалось загрузить маршруты</h1>
+        <p className="status-card__text">{error}</p>
+      </section>
+    )
+  }
+
   return (
-    <section className="page">
-      <article className="page-banner page-banner--compact">
-        <div>
-          <h1 className="page-title">Все маршруты рядом</h1>
-          <p className="page-description">
-            Собранные прогулки по текущему району: короткие, насыщенные, спокойные и смешанные.
+    <section className="excursions-page page-shell">
+      <section className="excursions-page__hero section-surface">
+        <div className="excursions-page__hero-copy">
+          <span className="eyebrow">Каталог маршрутов</span>
+          <h1 className="page-title">Готовые прогулки рядом</h1>
+          <p className="page-subtitle">
+            Отбирайте маршруты по теме и времени, чтобы быстро найти прогулку под текущую локацию.
           </p>
         </div>
 
-        <div className="page-banner__stats">
-          <div className="hero-stat">
-            <span className="hero-stat__value">{filteredRoutes.length}</span>
-            <span className="hero-stat__label">Маршрутов сейчас</span>
+        <div className="excursions-page__hero-stats">
+          <div className="excursions-page__stat">
+            <span className="excursions-page__stat-value">{filteredRoutes.length}</span>
+            <span className="meta-label">Маршрутов сейчас</span>
           </div>
-          <div className="hero-stat">
-            <span className="hero-stat__value">{formatDistance(totalDistance)}</span>
-            <span className="hero-stat__label">Суммарная длина</span>
+          <div className="excursions-page__stat">
+            <span className="excursions-page__stat-value">{formatDistance(totalDistance)}</span>
+            <span className="meta-label">Суммарная длина</span>
           </div>
-          <div className="hero-stat">
-            <span className="hero-stat__value">{storedContext.radiusMeters / 1000} км</span>
-            <span className="hero-stat__label">Текущий радиус</span>
-          </div>
-        </div>
-      </article>
-
-      <section className="page-section page-section--tight">
-        <div className="filter-stack">
-          <div className="filter-row filter-row--wrap">
-            {themeOptions.map((theme) => (
-              <button
-                className={`filter-pill${activeTheme === theme ? ' filter-pill--active' : ''}`}
-                key={theme}
-                onClick={() => setActiveTheme(theme)}
-                type="button"
-              >
-                {theme === 'all' ? 'Все маршруты' : formatTheme(theme)}
-              </button>
-            ))}
-          </div>
-
-          <div className="filter-row filter-row--wrap">
-            <button
-              className={`filter-pill${maxDuration === null ? ' filter-pill--active' : ''}`}
-              onClick={() => setMaxDuration(null)}
-              type="button"
-            >
-              Любое время
-            </button>
-            {durationOptions.map((duration) => (
-              <button
-                className={`filter-pill${maxDuration === duration ? ' filter-pill--active' : ''}`}
-                key={duration}
-                onClick={() => setMaxDuration(duration)}
-                type="button"
-              >
-                До {formatDuration(duration)}
-              </button>
-            ))}
+          <div className="excursions-page__stat">
+            <span className="excursions-page__stat-value">{storedContext.radiusMeters / 1000} км</span>
+            <span className="meta-label">Текущий радиус</span>
           </div>
         </div>
       </section>
 
-      {isLoading ? (
-        <section className="status-card">
-          <h3 className="status-card__title">Подбираем маршруты</h3>
-          <p className="status-card__text">Собираем прогулки рядом с вами.</p>
-        </section>
-      ) : (
-        <ExcursionCatalog
-          emptyDescription="Попробуйте ослабить фильтр по времени или выбрать другой тип маршрута."
-          emptyTitle="Маршруты по текущим условиям пока не найдены"
-          excursions={filteredRoutes}
-        />
-      )}
+      <section className="excursions-page__filters section-surface">
+        <div className="section-heading section-heading--stacked">
+          <div>
+            <h2 className="section-title">Фильтры каталога</h2>
+            <p className="section-copy">Тема и лимит времени помогают быстро сузить каталог под нужный сценарий.</p>
+          </div>
+
+          <div className="excursions-page__filter-stack">
+            <div className="filter-bar">
+              {themeOptions.map((theme) => (
+                <button
+                  className={`filter-pill${activeTheme === theme ? ' filter-pill--active' : ''}`}
+                  key={theme}
+                  onClick={() => setActiveTheme(theme)}
+                  type="button"
+                >
+                  {theme === 'all' ? 'Все маршруты' : formatTheme(theme)}
+                </button>
+              ))}
+            </div>
+
+            <div className="filter-bar">
+              <button
+                className={`filter-pill${maxDuration === null ? ' filter-pill--active' : ''}`}
+                onClick={() => setMaxDuration(null)}
+                type="button"
+              >
+                Любое время
+              </button>
+              {durationOptions.map((duration) => (
+                <button
+                  className={`filter-pill${maxDuration === duration ? ' filter-pill--active' : ''}`}
+                  key={duration}
+                  onClick={() => setMaxDuration(duration)}
+                  type="button"
+                >
+                  До {formatDuration(duration)}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <ExcursionCatalog
+        emptyDescription="Попробуйте снять ограничение по времени или выбрать другой тип прогулки."
+        emptyTitle="Маршруты по текущим условиям не найдены"
+        excursions={filteredRoutes}
+      />
+    </section>
+  )
+}
+
+function RoutesSkeleton() {
+  return (
+    <section className="excursions-page page-shell" aria-label="Загрузка маршрутов">
+      <section className="excursions-page__hero section-surface excursions-page__skeleton-hero">
+        <div className="skeleton-block skeleton-block--eyebrow" />
+        <div className="skeleton-block skeleton-block--title" />
+        <div className="skeleton-block skeleton-block--text" />
+      </section>
+
+      <section className="excursions-page__filters section-surface">
+        <div className="excursions-page__skeleton-filters">
+          {Array.from({ length: 8 }).map((_, index) => (
+            <span className="skeleton-pill" key={index} />
+          ))}
+        </div>
+      </section>
+
+      <div className="catalog">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <article className="route-skeleton-card" key={index}>
+            <div className="route-skeleton-card__cover" />
+            <div className="route-skeleton-card__body">
+              <span className="skeleton-block skeleton-block--small" />
+              <span className="skeleton-block skeleton-block--wide" />
+              <span className="skeleton-block skeleton-block--text" />
+              <span className="skeleton-block skeleton-block--text-short" />
+            </div>
+          </article>
+        ))}
+      </div>
     </section>
   )
 }

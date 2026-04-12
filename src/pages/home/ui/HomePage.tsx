@@ -1,21 +1,23 @@
-﻿import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import type {
   ExcursionTheme,
   NearbyPoint,
   PointCategory,
+  RouteStop,
   SupportedLocale,
 } from '@/entities/excursion/model/types'
 import { useDiscoveryRoutes } from '@/entities/excursion/model/useDiscoveryRoutes'
-import { buildGoogleMapsUrl } from '@/entities/place/api/osm-nearby'
 import { formatMeters } from '@/features/route-map/lib/route-geometry'
+import { useUserGeolocation } from '@/features/route-map/model/useUserGeolocation'
 import type {
   DiscoveryCategoryOption,
   DiscoveryRadiusOption,
 } from '@/features/route-map/ui/DiscoveryMap'
 import { DiscoveryMap } from '@/features/route-map/ui/DiscoveryMap'
-import { useUserGeolocation } from '@/features/route-map/model/useUserGeolocation'
+import { useAuth } from '@/app/providers/useAuth'
+import { useUserRoutes } from '@/features/user-routes/model/useUserRoutes'
 import { appRoutes } from '@/shared/config/routes'
 import {
   detectSupportedLocale,
@@ -24,11 +26,14 @@ import {
 } from '@/shared/lib/discovery-context'
 import {
   formatDuration,
+  formatLocaleLabel,
   formatPointCategory,
   formatTheme,
 } from '@/shared/lib/format'
+import { buildGoogleMapsUrl } from '@/shared/lib/maps'
 import { SmartPlaceImage } from '@/shared/ui/SmartPlaceImage'
 import { ExcursionCatalog } from '@/widgets/excursion-catalog/ui/ExcursionCatalog'
+import './HomePage.css'
 
 const nearbyCategoryOptions: DiscoveryCategoryOption[] = [
   { id: 'all', label: 'Все места' },
@@ -53,17 +58,18 @@ const routeThemeOptions: Array<ExcursionTheme | 'all'> = [
   'fun',
   'mixed',
 ]
-const durationOptions = [30, 45, 60, 90, 120]
-const nearbyPreviewCount = 4
-const categorySearchTerms: Record<PointCategory, string[]> = {
-  museum: ['музей', 'музеи', 'галерея', 'museum', 'gallery'],
-  entertainment: ['развлечения', 'развлечение', 'кино', 'театр', 'cinema', 'theatre'],
-  landmark: ['история', 'памятник', 'мемориал', 'истор', 'monument', 'memorial'],
-  food: ['еда', 'кафе', 'ресторан', 'пекарня', 'food', 'cafe', 'restaurant', 'bakery'],
-  park: ['природа', 'парк', 'сад', 'garden', 'park', 'nature'],
-}
 
+const durationOptions = [30, 45, 60, 90, 120]
 export function HomePage() {
+  const { session } = useAuth()
+  const {
+    addPointToDraft,
+    clearDraftRoute,
+    draftStops,
+    isPointInDraft,
+    removeDraftStop,
+    saveDraftRoute,
+  } = useUserRoutes()
   const storedContext = useMemo(() => getStoredDiscoveryContext(), [])
   const detectedLocale = useMemo(() => {
     if (typeof window === 'undefined') {
@@ -85,6 +91,12 @@ export function HomePage() {
   const [selectedPointId, setSelectedPointId] = useState<string>('')
   const [routeTargetId, setRouteTargetId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [savedDraftPreviewStops, setSavedDraftPreviewStops] = useState<RouteStop[]>([])
+  const [draftRouteNotice, setDraftRouteNotice] = useState<string | null>(null)
+  const nearbyListRef = useRef<HTMLDivElement | null>(null)
+  const shouldScrollNearbyListRef = useRef(false)
+  const isAuthenticated = Boolean(session?.isAuthenticated && session.profile)
+
   const {
     error: geolocationError,
     requestLocation,
@@ -97,7 +109,7 @@ export function HomePage() {
     Boolean(userPosition) || geolocationStatus === 'blocked' || geolocationStatus === 'unsupported'
 
   const {
-    error: nearbyPlacesError,
+    error: discoveryError,
     excursions,
     isLoading,
     nearbyPoints,
@@ -107,19 +119,8 @@ export function HomePage() {
     enabled: canLoadNearbyPlaces,
     locale: audioLocale,
     radiusMeters,
+    search: searchQuery,
   })
-
-  const visibleRoutes = useMemo(
-    () =>
-      excursions.filter((excursion) => {
-        const matchesTheme = activeRouteTheme === 'all' || excursion.theme === activeRouteTheme
-        const matchesDuration =
-          maxRouteDuration === null || excursion.durationMinutes <= maxRouteDuration
-
-        return matchesTheme && matchesDuration
-      }),
-    [activeRouteTheme, excursions, maxRouteDuration],
-  )
 
   useEffect(() => {
     saveDiscoveryContext({
@@ -141,187 +142,383 @@ export function HomePage() {
     storedContext.browserLocale,
   ])
 
-  const filteredNearbyPoints = useMemo(() => {
-    const normalizedQuery = normalizeSearch(searchQuery)
-
-    if (!normalizedQuery) {
-      return nearbyPoints
-    }
-
-    return nearbyPoints.filter((point) => matchesNearbyPoint(point, normalizedQuery))
-  }, [nearbyPoints, searchQuery])
-
-
-  const effectiveRouteTargetId =
-    routeTargetId && filteredNearbyPoints.some((point) => point.id === routeTargetId)
-      ? routeTargetId
-      : null
+  const filteredNearbyPoints = nearbyPoints
 
   const effectiveSelectedPointId =
-    filteredNearbyPoints.some((point) => point.id === selectedPointId)
-      ? selectedPointId
-      : filteredNearbyPoints[0]?.id ?? ''
+    filteredNearbyPoints.find((point) => point.id === selectedPointId)?.id ??
+    filteredNearbyPoints[0]?.id ??
+    ''
 
   const selectedPoint =
     filteredNearbyPoints.find((point) => point.id === effectiveSelectedPointId) ??
     filteredNearbyPoints[0] ??
     null
 
-  const selectedPointMapsUrl = selectedPoint
-    ? buildGoogleMapsUrl(selectedPoint.coordinates, userPosition)
-    : '#'
+  const effectiveRouteTargetId =
+    routeTargetId && filteredNearbyPoints.some((point) => point.id === routeTargetId)
+      ? routeTargetId
+      : null
 
   const visibleNearbyPoints = useMemo(
-    () => getVisibleNearbyPoints(filteredNearbyPoints, effectiveSelectedPointId, nearbyPreviewCount),
-    [effectiveSelectedPointId, filteredNearbyPoints],
+    () => getVisibleNearbyPoints(filteredNearbyPoints),
+    [filteredNearbyPoints],
   )
 
-  const cycleSelectedPoint = useCallback((direction: 1 | -1) => {
-    if (!filteredNearbyPoints.length) {
+  useEffect(() => {
+    if (!shouldScrollNearbyListRef.current) {
       return
     }
 
-    const currentIndex = filteredNearbyPoints.findIndex(
-      (point) => point.id === effectiveSelectedPointId,
-    )
-    const safeIndex = currentIndex >= 0 ? currentIndex : 0
-    const nextIndex =
-      (safeIndex + direction + filteredNearbyPoints.length) % filteredNearbyPoints.length
+    const list = nearbyListRef.current
 
-    setSelectedPointId(filteredNearbyPoints[nextIndex].id)
-  }, [effectiveSelectedPointId, filteredNearbyPoints])
-
-  const handleBuildRoute = useCallback((pointId: string) => {
-    setSelectedPointId(pointId)
-    setRouteTargetId(pointId)
-
-    if (!userPosition) {
-      requestLocation()
+    if (!list || !effectiveSelectedPointId) {
+      return
     }
-  }, [requestLocation, userPosition])
+
+    const selectedCard = list.querySelector<HTMLElement>(
+      `[data-point-id="${effectiveSelectedPointId}"]`,
+    )
+
+    selectedCard?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'center',
+    })
+    shouldScrollNearbyListRef.current = false
+  }, [effectiveSelectedPointId])
+
+  const visibleRoutes = useMemo(
+    () =>
+      excursions.filter((excursion) => {
+        const matchesTheme = activeRouteTheme === 'all' || excursion.theme === activeRouteTheme
+        const matchesDuration =
+          maxRouteDuration === null || excursion.durationMinutes <= maxRouteDuration
+
+        return matchesTheme && matchesDuration
+      }),
+    [activeRouteTheme, excursions, maxRouteDuration],
+  )
+
+  const selectedPointMapsUrl = selectedPoint
+    ? buildGoogleMapsUrl(selectedPoint.coordinates, userPosition)
+    : '#'
+  const selectedPointInDraft = selectedPoint ? isPointInDraft(selectedPoint.id) : false
+  const canAddSelectedPoint = Boolean(selectedPoint && !selectedPointInDraft && draftStops.length < 6)
+
+  const cycleSelectedPoint = useCallback(
+    (direction: 1 | -1) => {
+      if (!filteredNearbyPoints.length) {
+        return
+      }
+
+      const currentIndex = filteredNearbyPoints.findIndex(
+        (point) => point.id === effectiveSelectedPointId,
+      )
+      const safeIndex = currentIndex >= 0 ? currentIndex : 0
+      const nextIndex =
+        (safeIndex + direction + filteredNearbyPoints.length) % filteredNearbyPoints.length
+
+      shouldScrollNearbyListRef.current = true
+      setSelectedPointId(filteredNearbyPoints[nextIndex].id)
+    },
+    [effectiveSelectedPointId, filteredNearbyPoints],
+  )
+
+  const handleBuildRoute = useCallback(
+    (pointId: string) => {
+      setSelectedPointId(pointId)
+      setRouteTargetId(pointId)
+
+      if (!userPosition) {
+        requestLocation()
+      }
+    },
+    [requestLocation, userPosition],
+  )
+
+  const handleAddPointToRoute = useCallback(
+    (point: NearbyPoint) => {
+      addPointToDraft(point)
+      setDraftRouteNotice(null)
+      setSavedDraftPreviewStops([])
+      setSelectedPointId(point.id)
+      setRouteTargetId(point.id)
+
+      if (!userPosition) {
+        requestLocation()
+      }
+    },
+    [addPointToDraft, requestLocation, userPosition],
+  )
+
+  const handleClearDraftRoute = useCallback(() => {
+    clearDraftRoute()
+    setDraftRouteNotice(null)
+    setSavedDraftPreviewStops([])
+    setRouteTargetId(null)
+  }, [clearDraftRoute])
+
+  const handleSaveDraftRoute = useCallback(() => {
+    const result = saveDraftRoute()
+
+    if (result.status === 'duplicate') {
+      setDraftRouteNotice('Такой маршрут уже сохранен.')
+      return
+    }
+
+    if (result.status !== 'saved' || !result.route) {
+      return
+    }
+
+    setDraftRouteNotice('Маршрут сохранен в профиле.')
+    setSavedDraftPreviewStops(result.route.stops)
+    clearDraftRoute()
+    setRouteTargetId(null)
+  }, [clearDraftRoute, saveDraftRoute])
+
+  const handleNearbyCardClick = useCallback((pointId: string) => {
+    shouldScrollNearbyListRef.current = true
+    setSelectedPointId(pointId)
+  }, [])
+
+  const handleMapPointSelect = useCallback((pointId: string) => {
+    setSelectedPointId(pointId)
+  }, [])
 
   return (
-    <section className="page page--home">
-      <section className="page-section page-section--discovery-shell">
-        <DiscoveryMap
-          activeCategory={activePointCategory}
-          categoryOptions={nearbyCategoryOptions}
-          embedded
-          emptyMessage={searchQuery.trim() ? 'Ничего не найдено' : 'В этом радиусе пока нет подходящих мест.'}
-          geolocationError={geolocationError}
-          isLoading={isLoading || !canLoadNearbyPlaces}
-          loadError={nearbyPlacesError}
-          nearbyPoints={filteredNearbyPoints}
-          onBuildRoute={handleBuildRoute}
-          onChangeRadius={setRadiusMeters}
-          onLocateUser={requestLocation}
-          onSearchQueryChange={setSearchQuery}
-          onSelectCategory={setActivePointCategory}
-          onSelectNextPoint={() => cycleSelectedPoint(1)}
-          onSelectPoint={setSelectedPointId}
-          onSelectPreviousPoint={() => cycleSelectedPoint(-1)}
-          radiusMeters={radiusMeters}
-          radiusOptions={radiusOptions}
-          routeTargetId={effectiveRouteTargetId}
-          searchQuery={searchQuery}
-          selectedPointId={effectiveSelectedPointId}
-          userPosition={userPosition}
-        />
+    <section className="home-page page-shell">
+      <section className="home-page__hero section-surface">
+        <div className="home-page__intro">
+          <span className="eyebrow">Рядом с вами</span>
+          <h1 className="page-title">Маршруты и интересные места рядом</h1>
+          <p className="page-subtitle">
+            Откройте ближайшие точки интереса, соберите маршрут под свой темп и переходите к
+            готовым экскурсиям без лишних шагов.
+          </p>
 
-        <div className="discovery-home__places">
-          <div className="discovery-home__places-track" role="list">
+          <div className="home-page__meta">
+            <span className="chip chip--accent">Язык: {formatLocaleLabel(audioLocale)}</span>
+            <span className="chip">Радиус: {radiusMeters / 1000} км</span>
+            <span className="chip">{nearbyPoints.length} точек рядом</span>
+          </div>
+
+          <div className="home-page__cta">
+            <Link className="button button--primary" to={appRoutes.excursions}>
+              Смотреть готовые маршруты
+            </Link>
+            <Link className="button button--secondary" to={appRoutes.profile}>
+              Профиль
+            </Link>
+          </div>
+        </div>
+
+        <div className="home-page__discovery">
+          <DiscoveryMap
+            activeCategory={activePointCategory}
+            canSaveDraftRoute={isAuthenticated}
+            categoryOptions={nearbyCategoryOptions}
+            draftStops={draftStops}
+            draftRouteNotice={draftRouteNotice}
+            embedded
+            emptyMessage={searchQuery.trim() ? 'Ничего не найдено' : 'В этом радиусе нет доступных точек.'}
+            fixedRouteStops={savedDraftPreviewStops}
+            geolocationError={geolocationError}
+            isLoading={isLoading || !canLoadNearbyPlaces}
+            loadError={discoveryError}
+            nearbyPoints={filteredNearbyPoints}
+            onAddPointToDraft={handleAddPointToRoute}
+            onBuildRoute={handleBuildRoute}
+            onChangeRadius={setRadiusMeters}
+            onClearDraftRoute={handleClearDraftRoute}
+            onLocateUser={requestLocation}
+            onSaveDraftRoute={handleSaveDraftRoute}
+            onSearchQueryChange={setSearchQuery}
+            onSelectCategory={setActivePointCategory}
+            onSelectNextPoint={() => cycleSelectedPoint(1)}
+            onSelectPoint={handleMapPointSelect}
+            onSelectPreviousPoint={() => cycleSelectedPoint(-1)}
+            radiusMeters={radiusMeters}
+            radiusOptions={radiusOptions}
+            routeTargetId={effectiveRouteTargetId}
+            searchQuery={searchQuery}
+            selectedPointId={effectiveSelectedPointId}
+            userPosition={userPosition}
+          />
+        </div>
+      </section>
+
+      <section className="home-page__nearby section-surface">
+        <div className="section-heading">
+          <div>
+            <h2 className="section-title">Активная точка и ближайшие места</h2>
+          </div>
+        </div>
+
+        <div className="home-page__nearby-grid">
+          {selectedPoint ? (
+            <article className="home-page__spotlight">
+              <div className="home-page__spotlight-media">
+                <SmartPlaceImage
+                  alt={selectedPoint.title}
+                  category={selectedPoint.category}
+                  coordinates={selectedPoint.coordinates}
+                  loading="lazy"
+                  referrerPolicy="no-referrer"
+                  src={selectedPoint.imageUrl}
+                  title={selectedPoint.title}
+                />
+              </div>
+
+              <div className="home-page__spotlight-body">
+                <div className="home-page__spotlight-head">
+                  <div>
+                    <span className="eyebrow">{formatPointCategory(selectedPoint.category)}</span>
+                    <h3 className="home-page__spotlight-title">{selectedPoint.title}</h3>
+                  </div>
+                  <span className="chip chip--accent">{formatMeters(selectedPoint.distanceMeters)}</span>
+                </div>
+
+                <p className="home-page__spotlight-copy">{selectedPoint.description}</p>
+
+                <div className="home-page__spotlight-meta">
+                  <span className="chip">{selectedPoint.scheduleLabel}</span>
+                  {selectedPoint.addressLabel ? <span className="chip">{selectedPoint.addressLabel}</span> : null}
+                </div>
+
+                <div className="home-page__spotlight-actions">
+                  <a className="button button--secondary" href={selectedPointMapsUrl} rel="noreferrer" target="_blank">
+                    Открыть в Google Maps
+                  </a>
+                  <button className="button button--primary" onClick={() => handleBuildRoute(selectedPoint.id)} type="button">
+                    Построить маршрут
+                  </button>
+                  <button
+                    className="button button--ghost"
+                    disabled={!canAddSelectedPoint}
+                    onClick={() => handleAddPointToRoute(selectedPoint)}
+                    type="button"
+                  >
+                    {selectedPointInDraft ? 'Уже в маршруте' : 'Добавить в маршрут'}
+                  </button>
+                </div>
+              </div>
+            </article>
+          ) : (
+            <section className="status-card">
+              <h3 className="status-card__title">Нет выбранной точки</h3>
+              <p className="status-card__text">Разрешите геопозицию или выберите другую категорию.</p>
+            </section>
+          )}
+
+          <div className="home-page__nearby-list" ref={nearbyListRef} role="list">
             {visibleNearbyPoints.map((point) => (
               <button
-                className={`discovery-home__place-card${point.id === effectiveSelectedPointId ? ' discovery-home__place-card--active' : ''}`}
+                className={[
+                  'home-page__nearby-card',
+                  point.id === effectiveSelectedPointId ? 'home-page__nearby-card--active' : '',
+                  isPointInDraft(point.id) ? 'home-page__nearby-card--draft' : '',
+                ].filter(Boolean).join(' ')}
+                data-point-id={point.id}
                 key={point.id}
-                onClick={() => setSelectedPointId(point.id)}
+                onClick={() => handleNearbyCardClick(point.id)}
                 type="button"
               >
-                <div className="discovery-home__place-card-media">
+                <div className="home-page__nearby-card-media">
                   <SmartPlaceImage
                     alt={point.title}
                     category={point.category}
-                    className="discovery-home__place-card-image"
+                    className="home-page__nearby-card-image"
                     coordinates={point.coordinates}
                     loading="lazy"
                     referrerPolicy="no-referrer"
                     src={point.imageUrl}
                     title={point.title}
-                    wikidataId={point.wikidataId}
-                    wikipediaTitle={point.wikipediaTitle}
                   />
-                  <div className="discovery-home__place-card-overlay">
-                    <span className="eyebrow">{formatPointCategory(point.category)}</span>
-                    <span className="chip">{formatMeters(point.distanceMeters)}</span>
-                  </div>
                 </div>
 
-                <div className="discovery-home__place-card-body">
-                  <h3 className="discovery-home__place-card-title">{point.title}</h3>
-                  <p className="discovery-home__place-card-copy">{point.shortDescription}</p>
-                  <div className="discovery-home__place-card-meta">
-                    <span className="chip chip--soft">{point.scheduleLabel}</span>
-                    {point.addressLabel ? <span className="chip chip--soft">{point.addressLabel}</span> : null}
+                <div className="home-page__nearby-card-body">
+                  <div className="home-page__nearby-card-head">
+                    <span className="eyebrow">{formatPointCategory(point.category)}</span>
+                    <span className="home-page__nearby-card-distance">{formatMeters(point.distanceMeters)}</span>
                   </div>
+                  <h3 className="home-page__nearby-card-title">{point.title}</h3>
+                  <p className="home-page__nearby-card-copy">{point.shortDescription}</p>
+                  {isPointInDraft(point.id) ? (
+                    <span className="home-page__nearby-card-check">В маршруте ✓</span>
+                  ) : null}
                 </div>
               </button>
             ))}
           </div>
         </div>
 
-        {selectedPoint ? (
-          <article className="discovery-home__spotlight">
-            <div className="discovery-home__spotlight-media">
-              <SmartPlaceImage
-                alt={selectedPoint.title}
-                category={selectedPoint.category}
-                coordinates={selectedPoint.coordinates}
-                loading="lazy"
-                referrerPolicy="no-referrer"
-                src={selectedPoint.imageUrl}
-                title={selectedPoint.title}
-                wikidataId={selectedPoint.wikidataId}
-                wikipediaTitle={selectedPoint.wikipediaTitle}
-              />
+        <div className="home-page__builder">
+          <div className="home-page__builder-head">
+            <div>
+              <h3 className="home-page__builder-title">Мой маршрут</h3>
+              <p className="home-page__builder-copy">
+                {draftStops.length
+                  ? `${draftStops.length} из 6 точек выбрано`
+                  : 'Выберите минимум две точки рядом'}
+              </p>
             </div>
-
-            <div className="discovery-home__spotlight-body">
-              <div className="discovery-home__spotlight-title-row">
-                <div>
-                  <p className="spotlight-card__eyebrow">{formatPointCategory(selectedPoint.category)}</p>
-                  <h3 className="spotlight-card__title">{selectedPoint.title}</h3>
-                </div>
-                <span className="chip chip--accent">{formatMeters(selectedPoint.distanceMeters)}</span>
-              </div>
-
-              <p className="spotlight-card__description">{selectedPoint.description}</p>
-
-              <div className="spotlight-card__meta">
-                <span className="chip">{selectedPoint.scheduleLabel}</span>
-                {selectedPoint.addressLabel ? <span className="chip">{selectedPoint.addressLabel}</span> : null}
-              </div>
-
-              <div className="spotlight-card__actions">
-                <a className="button button--secondary" href={selectedPointMapsUrl} rel="noreferrer" target="_blank">
-                  Открыть в Google Maps
-                </a>
-                <button className="button button--primary" onClick={() => handleBuildRoute(selectedPoint.id)} type="button">
-                  Построить маршрут
-                </button>
-              </div>
-            </div>
-          </article>
-        ) : null}
-      </section>
-
-      <section className="page-section">
-        <div className="section-heading section-heading--stacked">
-          <div>
-            <h2 className="section-title">Готовые маршруты вокруг пользователя</h2>
+            <span className="chip chip--accent">{draftStops.length}/6</span>
           </div>
 
-          <div className="filter-stack">
-            <div className="filter-row filter-row--wrap">
+          {draftStops.length ? (
+            <div className="home-page__builder-stops">
+              {draftStops.map((stop) => (
+                <button
+                  className="home-page__builder-stop"
+                  key={stop.id}
+                  onClick={() => removeDraftStop(stop.id)}
+                  type="button"
+                >
+                  <span>{stop.order}. {stop.title}</span>
+                  <span aria-hidden="true">×</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          <div className="home-page__builder-actions">
+            {isAuthenticated ? (
+              <button
+                className="button button--primary"
+                disabled={draftStops.length < 2}
+                onClick={handleSaveDraftRoute}
+                type="button"
+              >
+                Сохранить маршрут
+              </button>
+            ) : (
+              <Link className="button button--primary" to={appRoutes.signIn}>
+                Войти чтобы сохранить
+              </Link>
+            )}
+            <button
+              className="button button--secondary"
+              disabled={!draftStops.length}
+              onClick={handleClearDraftRoute}
+              type="button"
+            >
+              Очистить
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="home-page__routes section-surface">
+        <div className="section-heading section-heading--stacked">
+          <div>
+            <h2 className="section-title">Готовые маршруты рядом</h2>
+            <p className="section-copy">
+              Выберите готовую прогулку по теме и времени и сразу перейдите к прохождению маршрута.
+            </p>
+          </div>
+
+          <div className="home-page__filters">
+            <div className="filter-bar">
               {routeThemeOptions.map((theme) => (
                 <button
                   className={`filter-pill${activeRouteTheme === theme ? ' filter-pill--active' : ''}`}
@@ -334,7 +531,7 @@ export function HomePage() {
               ))}
             </div>
 
-            <div className="filter-row filter-row--wrap">
+            <div className="filter-bar">
               <button
                 className={`filter-pill${maxRouteDuration === null ? ' filter-pill--active' : ''}`}
                 onClick={() => setMaxRouteDuration(null)}
@@ -357,12 +554,12 @@ export function HomePage() {
         </div>
 
         <ExcursionCatalog
-          emptyDescription="Попробуйте сменить тему маршрута или ограничение по времени."
-          emptyTitle="Подходящие маршруты пока не найдены"
+          emptyDescription="Попробуйте снять фильтр по времени или переключить тип маршрута."
+          emptyTitle="Маршруты по текущим условиям не найдены"
           excursions={visibleRoutes.slice(0, 6)}
         />
 
-        <div className="section-actions">
+        <div className="home-page__routes-actions">
           <Link className="button button--secondary" to={appRoutes.excursions}>
             Все маршруты
           </Link>
@@ -372,42 +569,6 @@ export function HomePage() {
   )
 }
 
-function getVisibleNearbyPoints(
-  points: NearbyPoint[],
-  selectedPointId: string,
-  maxCount: number,
-) {
-  if (!points.length) {
-    return []
-  }
-
-  const selectedIndex = points.findIndex((point) => point.id === selectedPointId)
-  const startIndex = selectedIndex >= 0 ? selectedIndex : 0
-
-  return Array.from({ length: Math.min(maxCount, points.length) }, (_, index) =>
-    points[(startIndex + index) % points.length],
-  )
+function getVisibleNearbyPoints(points: NearbyPoint[]) {
+  return points
 }
-
-function matchesNearbyPoint(point: NearbyPoint, normalizedQuery: string) {
-  const haystack = [
-    point.title,
-    point.shortDescription,
-    point.description,
-    point.addressLabel,
-    formatPointCategory(point.category),
-    ...categorySearchTerms[point.category],
-  ]
-    .filter(Boolean)
-    .join(' ')
-    .toLocaleLowerCase()
-
-  return haystack.includes(normalizedQuery)
-}
-
-function normalizeSearch(value: string) {
-  return value.trim().toLocaleLowerCase()
-}
-
-
-

@@ -306,8 +306,6 @@ function createRouteStop(point: NearbyPoint, order: number, locale: SupportedLoc
     description: point.description,
     coordinates: point.coordinates,
     imageUrl: point.imageUrl,
-    wikidataId: point.wikidataId,
-    wikipediaTitle: point.wikipediaTitle,
     expectedVisitMinutes: point.expectedVisitMinutes,
     rating: point.rating,
     scheduleLabel: point.scheduleLabel,

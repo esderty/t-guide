@@ -1,5 +1,6 @@
 ﻿import type { Excursion } from '@/entities/excursion/model/types'
 import { ExcursionCard } from '@/entities/excursion/ui/ExcursionCard'
+import './ExcursionCatalog.css'
 
 interface ExcursionCatalogProps {
   excursions: Excursion[]
@@ -24,7 +25,7 @@ export function ExcursionCatalog({
   return (
     <div className="catalog">
       {excursions.map((excursion) => (
-        <ExcursionCard excursion={excursion} key={excursion.id} />
+        <ExcursionCard excursion={excursion} key={excursion.slug} />
       ))}
     </div>
   )
