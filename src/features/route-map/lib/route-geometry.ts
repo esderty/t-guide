@@ -113,7 +113,7 @@ export async function buildOsmWalkingRouteGeometryFromPoints(
 
           if (!geometry || geometry.length < 2) {
             return {
-              geometry: createSegmentFallbackGeometry(point, nextPoint),
+              geometry: null,
               resolved: false,
             }
           }
@@ -131,7 +131,7 @@ export async function buildOsmWalkingRouteGeometryFromPoints(
           }
 
           return {
-            geometry: createSegmentFallbackGeometry(point, nextPoint),
+            geometry: null,
             resolved: false,
           }
         }
@@ -145,7 +145,7 @@ export async function buildOsmWalkingRouteGeometryFromPoints(
     }
 
     return {
-      geometry: createLineGeometryFromPoints(points),
+      geometry: null,
       status: 'fallback',
     }
   }
@@ -279,13 +279,6 @@ function getBoundsFromLngLat(points: LngLat[]): LngLatBounds {
   ]
 }
 
-function createSegmentFallbackGeometry(from: GeoPoint, to: GeoPoint): RouteGeometry {
-  return {
-    type: 'LineString',
-    coordinates: [toLngLat(from), toLngLat(to)],
-  }
-}
-
 function mergeSegmentGeometries(geometries: RouteGeometry[]): RouteGeometry | null {
   const segments = geometries.flatMap((geometry) =>
     geometry.type === 'LineString' ? [geometry.coordinates] : geometry.coordinates,
@@ -311,9 +304,12 @@ function mergeSegmentGeometries(geometries: RouteGeometry[]): RouteGeometry | nu
 }
 
 function toWalkingRouteBuildResult(
-  segments: Array<{ geometry: RouteGeometry; resolved: boolean }>,
+  segments: Array<{ geometry: RouteGeometry | null; resolved: boolean }>,
 ): WalkingRouteBuildResult {
   const resolvedSegments = segments.filter((segment) => segment.resolved)
+  const resolvedGeometries = segments
+    .map((segment) => segment.geometry)
+    .filter((geometry): geometry is RouteGeometry => geometry !== null)
 
   if (!segments.length) {
     return {
@@ -322,7 +318,7 @@ function toWalkingRouteBuildResult(
     }
   }
 
-  const geometry = mergeSegmentGeometries(segments.map((segment) => segment.geometry))
+  const geometry = mergeSegmentGeometries(resolvedGeometries)
 
   if (!geometry) {
     return {

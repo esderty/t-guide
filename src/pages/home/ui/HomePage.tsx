@@ -179,11 +179,10 @@ export function HomePage() {
       `[data-point-id="${effectiveSelectedPointId}"]`,
     )
 
-    selectedCard?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'nearest',
-      inline: 'center',
-    })
+    if (selectedCard) {
+      scrollElementIntoHorizontalViewIfNeeded(list, selectedCard)
+    }
+
     shouldScrollNearbyListRef.current = false
   }, [effectiveSelectedPointId])
 
@@ -282,6 +281,7 @@ export function HomePage() {
   }, [])
 
   const handleMapPointSelect = useCallback((pointId: string) => {
+    shouldScrollNearbyListRef.current = true
     setSelectedPointId(pointId)
   }, [])
 
@@ -571,4 +571,29 @@ export function HomePage() {
 
 function getVisibleNearbyPoints(points: NearbyPoint[]) {
   return points
+}
+
+function scrollElementIntoHorizontalViewIfNeeded(
+  container: HTMLElement,
+  target: HTMLElement,
+) {
+  const containerRect = container.getBoundingClientRect()
+  const targetRect = target.getBoundingClientRect()
+  const isFullyVisible =
+    targetRect.left >= containerRect.left && targetRect.right <= containerRect.right
+
+  if (isFullyVisible) {
+    return
+  }
+
+  const currentScrollLeft = container.scrollLeft
+  const relativeLeft = targetRect.left - containerRect.left + currentScrollLeft
+  const nextScrollLeft =
+    relativeLeft - container.clientWidth / 2 + targetRect.width / 2
+  const maxScrollLeft = Math.max(0, container.scrollWidth - container.clientWidth)
+
+  container.scrollTo({
+    behavior: 'smooth',
+    left: Math.min(Math.max(0, nextScrollLeft), maxScrollLeft),
+  })
 }

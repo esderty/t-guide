@@ -18,6 +18,7 @@ import {
   formatStopCount,
   formatTheme,
 } from '@/shared/lib/format'
+import { useExpandableList } from '@/shared/lib/useExpandableList'
 import './ProfilePage.css'
 
 const localeOptions: SupportedLocale[] = ['ru', 'en', 'de', 'fr', 'es']
@@ -39,9 +40,21 @@ export function ProfilePage() {
   const [language, setLanguage] = useState<SupportedLocale>(profile?.language ?? 'ru')
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
-  const [historyVisibleCount, setHistoryVisibleCount] = useState(3)
   const [isLocaleMenuOpen, setIsLocaleMenuOpen] = useState(false)
   const localeSelectRef = useRef<HTMLDivElement | null>(null)
+  const historyItems = overview?.routeHistory ?? []
+  const {
+    canToggle: canTogglePersonalRoutes,
+    isExpanded: arePersonalRoutesExpanded,
+    toggle: togglePersonalRoutes,
+    visibleItems: visiblePersonalRoutes,
+  } = useExpandableList(personalRoutes, 6)
+  const {
+    canToggle: canToggleHistoryRoutes,
+    isExpanded: areHistoryRoutesExpanded,
+    toggle: toggleHistoryRoutes,
+    visibleItems: visibleHistoryRoutes,
+  } = useExpandableList(historyItems, 3)
 
   useEffect(() => {
     if (!profile) {
@@ -117,8 +130,6 @@ export function ProfilePage() {
       </section>
     )
   }
-
-  const historyItems = overview?.routeHistory ?? []
 
   return (
     <section className="profile-page page-shell">
@@ -239,7 +250,7 @@ export function ProfilePage() {
 
         <div className="profile-routes profile-routes--grid">
           {personalRoutes.length ? (
-            personalRoutes.map((route) => (
+            visiblePersonalRoutes.map((route) => (
               <ProfileRouteCard
                 key={route.slug}
                 onRemove={() => removePersonalRoute(route.slug)}
@@ -251,6 +262,18 @@ export function ProfilePage() {
             <p className="profile-card__text">Соберите маршрут из точек рядом на главной странице.</p>
           )}
         </div>
+
+        {canTogglePersonalRoutes ? (
+          <div className="profile-card__footer">
+            <button
+              className="button button--secondary profile-card__toggle"
+              onClick={togglePersonalRoutes}
+              type="button"
+            >
+              {arePersonalRoutesExpanded ? 'Скрыть' : 'Показать все'}
+            </button>
+          </div>
+        ) : null}
       </section>
 
       <section className="profile-card profile-card--large">
@@ -262,7 +285,7 @@ export function ProfilePage() {
         </div>
 
         <div className="profile-history">
-          {historyItems.slice(0, historyVisibleCount).map((item) => (
+          {visibleHistoryRoutes.map((item) => (
             <article className="profile-history__item" key={item.id}>
               <div className="profile-history__route">
                 <span className="profile-route__theme">{formatTheme(item.route.theme)}</span>
@@ -286,14 +309,16 @@ export function ProfilePage() {
           ))}
         </div>
 
-        {historyItems.length > historyVisibleCount ? (
-          <button
-            className="button button--secondary"
-            onClick={() => setHistoryVisibleCount(historyItems.length)}
-            type="button"
-          >
-            Показать все
-          </button>
+        {canToggleHistoryRoutes ? (
+          <div className="profile-card__footer">
+            <button
+              className="button button--secondary profile-card__toggle"
+              onClick={toggleHistoryRoutes}
+              type="button"
+            >
+              {areHistoryRoutesExpanded ? 'Скрыть' : 'Показать все'}
+            </button>
+          </div>
         ) : null}
       </section>
     </section>

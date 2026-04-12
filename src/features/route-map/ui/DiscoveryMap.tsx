@@ -10,7 +10,6 @@ import type {
 } from '@/entities/excursion/model/types'
 import {
   buildOsmWalkingRouteGeometryFromPoints,
-  createLineGeometryFromPoints,
   getBoundsFromGeometry,
   getBoundsFromPoints,
   toLngLat,
@@ -185,29 +184,14 @@ export function DiscoveryMap({
     userPosition && guidedPoint
       ? `${guidedPoint.id}:${userPosition.lat.toFixed(5)}:${userPosition.lng.toFixed(5)}`
       : ''
-  const fallbackGuideGeometry = useMemo(() => {
-    if (!userPosition || !guidedPoint) {
-      return null
-    }
-
-    return createLineGeometryFromPoints([userPosition, guidedPoint.coordinates])
-  }, [guidedPoint, userPosition])
   const guideGeometry =
     guideRoute.signature === guideSignature && guideRoute.geometry
       ? guideRoute.geometry
-      : fallbackGuideGeometry
-  const draftFallbackGeometry = useMemo(() => {
-    const points = [
-      ...(userPosition ? [userPosition] : []),
-      ...visibleDraftStops.map((stop) => stop.coordinates),
-    ]
-
-    return points.length > 1 ? createLineGeometryFromPoints(points) : null
-  }, [userPosition, visibleDraftStops])
+      : null
   const draftGeometry =
     draftRoute.signature === draftSignature && draftRoute.geometry
       ? draftRoute.geometry
-      : draftFallbackGeometry
+      : null
   const guideBounds = useMemo(
     () => (guideGeometry ? getBoundsFromGeometry(guideGeometry) : null),
     [guideGeometry],
@@ -286,7 +270,7 @@ export function DiscoveryMap({
         }
 
         setGuideRoute({
-          geometry: result.geometry,
+          geometry: result.status === 'fallback' ? null : result.geometry,
           signature: guideSignature,
         })
       } catch (error) {
@@ -330,7 +314,7 @@ export function DiscoveryMap({
         }
 
         setDraftRoute({
-          geometry: result.geometry,
+          geometry: result.status === 'fallback' ? null : result.geometry,
           signature: draftSignature,
         })
       } catch (error) {

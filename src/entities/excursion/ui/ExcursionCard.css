@@ -84,6 +84,7 @@
     display: grid;
     grid-template-rows: auto auto auto 1fr auto auto auto;
     align-content: start;
+    justify-items: stretch;
     gap: 11px;
     padding: 18px 22px 20px;
     margin-top: 0;
@@ -94,6 +95,11 @@
     grid-template-columns: 1fr;
     gap: 8px;
     align-items: start;
+    min-width: 0;
+}
+
+.card__title-row > div {
+    min-width: 0;
 }
 
 .card__title {
@@ -164,6 +170,7 @@
 .card__stop-preview {
     display: grid;
     gap: 8px;
+    min-width: 0;
 }
 
 .card__stop-preview .chip {
@@ -210,7 +217,9 @@
 .card__route-points {
     display: grid;
     gap: 8px;
-    padding-inline: 4px;
+    width: 100%;
+    min-width: 0;
+    padding-inline: 0;
 }
 
 .card__route-point {
@@ -232,8 +241,11 @@
     justify-content: center;
     gap: 8px;
     align-items: center;
+    width: min(100%, 320px);
+    min-width: 0;
+    margin: 0 auto;
     padding-top: 4px;
-    padding-inline: 4px;
+    padding-inline: 0;
 }
 
 .card__actions .button {
