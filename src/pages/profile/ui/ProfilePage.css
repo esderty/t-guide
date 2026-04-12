@@ -265,6 +265,20 @@
   gap: 14px;
 }
 
+.profile-routes--expandable,
+.profile-history--expandable {
+  overflow: hidden;
+  max-height: var(--profile-expandable-max-height, none);
+  transition:
+    max-height 0.32s ease,
+    opacity 0.24s ease;
+}
+
+.profile-routes--expanded .profile-route,
+.profile-history--expanded .profile-history__item {
+  animation: profile-expand-item 0.26s ease both;
+}
+
 .profile-card--saved .profile-routes {
   max-height: 320px;
   overflow-y: auto;
@@ -280,6 +294,7 @@
 .profile-card__footer {
   display: flex;
   justify-content: center;
+  margin-top: 4px;
 }
 
 .profile-card__toggle {
@@ -299,7 +314,9 @@
     var(--color-bg-elevated);
   transition:
     border-color 0.2s ease,
-    box-shadow 0.2s ease;
+    box-shadow 0.2s ease,
+    opacity 0.24s ease,
+    transform 0.24s ease;
 }
 
 .profile-route__main {
@@ -381,6 +398,9 @@
   border: 1px solid var(--color-line);
   border-radius: 22px;
   background: var(--color-bg-elevated);
+  transition:
+    opacity 0.24s ease,
+    transform 0.24s ease;
 }
 
 .profile-history__route {
@@ -505,6 +525,18 @@
 
   to {
     background-position: -120% 0;
+  }
+}
+
+@keyframes profile-expand-item {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

@@ -92,7 +92,11 @@ export function HomePage() {
   const [routeTargetId, setRouteTargetId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [savedDraftPreviewStops, setSavedDraftPreviewStops] = useState<RouteStop[]>([])
-  const [draftRouteNotice, setDraftRouteNotice] = useState<string | null>(null)
+  const [draftRouteNotice, setDraftRouteNoticeValue] = useState<string | null>(null)
+  const [draftRouteNoticeKey, setDraftRouteNoticeKey] = useState(0)
+  const [draftRouteNoticeTone, setDraftRouteNoticeTone] = useState<'success' | 'warning'>(
+    'success',
+  )
   const nearbyListRef = useRef<HTMLDivElement | null>(null)
   const shouldScrollNearbyListRef = useRef(false)
   const isAuthenticated = Boolean(session?.isAuthenticated && session.profile)
@@ -186,6 +190,33 @@ export function HomePage() {
     shouldScrollNearbyListRef.current = false
   }, [effectiveSelectedPointId])
 
+  useEffect(() => {
+    if (!draftRouteNotice) {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setDraftRouteNoticeValue(null)
+    }, 3200)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [draftRouteNotice, draftRouteNoticeKey])
+
+  const setDraftRouteNotice = useCallback((message: string | null) => {
+    if (!message) {
+      setDraftRouteNoticeValue(null)
+      return
+    }
+
+    setDraftRouteNoticeTone(
+      message.toLowerCase().includes('уже') ? 'warning' : 'success',
+    )
+    setDraftRouteNoticeKey((current) => current + 1)
+    setDraftRouteNoticeValue(message)
+  }, [])
+
   const visibleRoutes = useMemo(
     () =>
       excursions.filter((excursion) => {
@@ -247,7 +278,7 @@ export function HomePage() {
         requestLocation()
       }
     },
-    [addPointToDraft, requestLocation, userPosition],
+    [addPointToDraft, requestLocation, setDraftRouteNotice, userPosition],
   )
 
   const handleClearDraftRoute = useCallback(() => {
@@ -255,7 +286,7 @@ export function HomePage() {
     setDraftRouteNotice(null)
     setSavedDraftPreviewStops([])
     setRouteTargetId(null)
-  }, [clearDraftRoute])
+  }, [clearDraftRoute, setDraftRouteNotice])
 
   const handleSaveDraftRoute = useCallback(() => {
     const result = saveDraftRoute()
@@ -273,7 +304,7 @@ export function HomePage() {
     setSavedDraftPreviewStops(result.route.stops)
     clearDraftRoute()
     setRouteTargetId(null)
-  }, [clearDraftRoute, saveDraftRoute])
+  }, [clearDraftRoute, saveDraftRoute, setDraftRouteNotice])
 
   const handleNearbyCardClick = useCallback((pointId: string) => {
     shouldScrollNearbyListRef.current = true
@@ -319,6 +350,8 @@ export function HomePage() {
             categoryOptions={nearbyCategoryOptions}
             draftStops={draftStops}
             draftRouteNotice={draftRouteNotice}
+            draftRouteNoticeKey={draftRouteNoticeKey}
+            draftRouteNoticeTone={draftRouteNoticeTone}
             embedded
             emptyMessage={searchQuery.trim() ? 'Ничего не найдено' : 'В этом радиусе нет доступных точек.'}
             fixedRouteStops={savedDraftPreviewStops}
@@ -505,6 +538,16 @@ export function HomePage() {
               Очистить
             </button>
           </div>
+
+          {draftRouteNotice ? (
+            <div
+              className={`home-page__builder-notice home-page__builder-notice--${draftRouteNoticeTone}`}
+              key={draftRouteNoticeKey}
+              role="status"
+            >
+              {draftRouteNotice}
+            </div>
+          ) : null}
         </div>
       </section>
 

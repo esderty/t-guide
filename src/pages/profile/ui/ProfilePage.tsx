@@ -18,7 +18,7 @@ import {
   formatStopCount,
   formatTheme,
 } from '@/shared/lib/format'
-import { useExpandableList } from '@/shared/lib/useExpandableList'
+import { useAnimatedExpandableList } from '@/shared/lib/useAnimatedExpandableList'
 import './ProfilePage.css'
 
 const localeOptions: SupportedLocale[] = ['ru', 'en', 'de', 'fr', 'es']
@@ -45,16 +45,18 @@ export function ProfilePage() {
   const historyItems = overview?.routeHistory ?? []
   const {
     canToggle: canTogglePersonalRoutes,
+    containerRef: personalRoutesRef,
     isExpanded: arePersonalRoutesExpanded,
     toggle: togglePersonalRoutes,
     visibleItems: visiblePersonalRoutes,
-  } = useExpandableList(personalRoutes, 6)
+  } = useAnimatedExpandableList(personalRoutes, 6)
   const {
     canToggle: canToggleHistoryRoutes,
+    containerRef: historyRoutesRef,
     isExpanded: areHistoryRoutesExpanded,
     toggle: toggleHistoryRoutes,
     visibleItems: visibleHistoryRoutes,
-  } = useExpandableList(historyItems, 3)
+  } = useAnimatedExpandableList(historyItems, 3)
 
   useEffect(() => {
     if (!profile) {
@@ -248,7 +250,10 @@ export function ProfilePage() {
           <span className="chip chip--accent">{personalRoutes.length}</span>
         </div>
 
-        <div className="profile-routes profile-routes--grid">
+        <div
+          className={`profile-routes profile-routes--grid profile-routes--expandable${arePersonalRoutesExpanded ? ' profile-routes--expanded' : ''}`}
+          ref={personalRoutesRef}
+        >
           {personalRoutes.length ? (
             visiblePersonalRoutes.map((route) => (
               <ProfileRouteCard
@@ -284,7 +289,10 @@ export function ProfilePage() {
           </div>
         </div>
 
-        <div className="profile-history">
+        <div
+          className={`profile-history profile-history--expandable${areHistoryRoutesExpanded ? ' profile-history--expanded' : ''}`}
+          ref={historyRoutesRef}
+        >
           {visibleHistoryRoutes.map((item) => (
             <article className="profile-history__item" key={item.id}>
               <div className="profile-history__route">
@@ -331,7 +339,11 @@ interface ProfileRouteCardProps {
   onShare: () => void
 }
 
-function ProfileRouteCard({ route, onRemove, onShare }: ProfileRouteCardProps) {
+function ProfileRouteCard({
+  route,
+  onRemove,
+  onShare,
+}: ProfileRouteCardProps) {
   return (
     <article className="profile-route">
       <Link className="profile-route__main" to={appRoutes.excursion(route.slug)}>

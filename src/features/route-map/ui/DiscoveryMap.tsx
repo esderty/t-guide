@@ -46,7 +46,9 @@ interface DiscoveryMapProps {
   canSaveDraftRoute?: boolean
   categoryOptions: DiscoveryCategoryOption[]
   draftStops?: RouteStop[]
+  draftRouteNoticeKey?: number
   draftRouteNotice?: string | null
+  draftRouteNoticeTone?: 'success' | 'warning'
   embedded?: boolean
   emptyMessage: string
   fixedRouteStops?: RouteStop[]
@@ -97,7 +99,9 @@ export function DiscoveryMap({
   canSaveDraftRoute = true,
   categoryOptions,
   draftStops = [],
+  draftRouteNoticeKey = 0,
   draftRouteNotice = null,
+  draftRouteNoticeTone = 'success',
   embedded = false,
   emptyMessage,
   fixedRouteStops = [],
@@ -642,7 +646,11 @@ export function DiscoveryMap({
           <div className="discovery-map__overlay-note">{emptyMessage}</div>
         ) : null}
         {draftRouteNotice ? (
-          <div className="discovery-map__overlay-note discovery-map__overlay-note--success">
+          <div
+            className={`discovery-map__toast discovery-map__toast--${draftRouteNoticeTone}`}
+            key={draftRouteNoticeKey}
+            role="status"
+          >
             {draftRouteNotice}
           </div>
         ) : null}
