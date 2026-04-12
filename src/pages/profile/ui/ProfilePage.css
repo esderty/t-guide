@@ -268,15 +268,18 @@
 .profile-routes--expandable,
 .profile-history--expandable {
   overflow: hidden;
-  max-height: var(--profile-expandable-max-height, none);
+  max-height: none;
   transition:
-    max-height 0.32s ease,
-    opacity 0.24s ease;
+    max-height 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.32s ease;
 }
 
-.profile-routes--expanded .profile-route,
-.profile-history--expanded .profile-history__item {
-  animation: profile-expand-item 0.26s ease both;
+.profile-expandable--expanding .profile-expandable-item--extra {
+  animation: profile-expand-item-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.profile-expandable--collapsing .profile-expandable-item--extra {
+  animation: profile-expand-item-out 0.24s ease both;
 }
 
 .profile-card--saved .profile-routes {
@@ -294,7 +297,7 @@
 .profile-card__footer {
   display: flex;
   justify-content: center;
-  margin-top: 4px;
+  margin-top: 10px;
 }
 
 .profile-card__toggle {
@@ -528,15 +531,31 @@
   }
 }
 
-@keyframes profile-expand-item {
+@keyframes profile-expand-item-in {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(14px) scale(0.985);
+  }
+
+  60% {
+    opacity: 1;
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes profile-expand-item-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.985);
   }
 }
 
@@ -684,7 +703,10 @@
   .profile-page__skeleton,
   .profile-select,
   .profile-select__menu,
-  .profile-select__option {
+  .profile-select__option,
+  .profile-routes--expandable,
+  .profile-history--expandable,
+  .profile-expandable-item--extra {
     animation: none;
     transition: none;
   }

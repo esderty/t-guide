@@ -44,19 +44,27 @@ export function ProfilePage() {
   const localeSelectRef = useRef<HTMLDivElement | null>(null)
   const historyItems = overview?.routeHistory ?? []
   const {
+    animationState: personalRoutesAnimationState,
     canToggle: canTogglePersonalRoutes,
     containerRef: personalRoutesRef,
     isExpanded: arePersonalRoutesExpanded,
+    isExtraAnimatedItem: isExtraPersonalRoute,
     toggle: togglePersonalRoutes,
     visibleItems: visiblePersonalRoutes,
   } = useAnimatedExpandableList(personalRoutes, 6)
   const {
+    animationState: historyRoutesAnimationState,
     canToggle: canToggleHistoryRoutes,
     containerRef: historyRoutesRef,
     isExpanded: areHistoryRoutesExpanded,
+    isExtraAnimatedItem: isExtraHistoryRoute,
     toggle: toggleHistoryRoutes,
     visibleItems: visibleHistoryRoutes,
   } = useAnimatedExpandableList(historyItems, 3)
+  const arePersonalRoutesOpen =
+    arePersonalRoutesExpanded || personalRoutesAnimationState === 'expanding'
+  const areHistoryRoutesOpen =
+    areHistoryRoutesExpanded || historyRoutesAnimationState === 'expanding'
 
   useEffect(() => {
     if (!profile) {
@@ -251,12 +259,23 @@ export function ProfilePage() {
         </div>
 
         <div
-          className={`profile-routes profile-routes--grid profile-routes--expandable${arePersonalRoutesExpanded ? ' profile-routes--expanded' : ''}`}
+          className={[
+            'profile-routes',
+            'profile-routes--grid',
+            'profile-routes--expandable',
+            'profile-expandable',
+            `profile-expandable--${personalRoutesAnimationState}`,
+          ].join(' ')}
           ref={personalRoutesRef}
         >
           {personalRoutes.length ? (
-            visiblePersonalRoutes.map((route) => (
+            visiblePersonalRoutes.map((route, index) => (
               <ProfileRouteCard
+                className={
+                  isExtraPersonalRoute(index)
+                    ? 'profile-expandable-item profile-expandable-item--extra'
+                    : ''
+                }
                 key={route.slug}
                 onRemove={() => removePersonalRoute(route.slug)}
                 onShare={() => void shareRoute(route)}
@@ -275,7 +294,7 @@ export function ProfilePage() {
               onClick={togglePersonalRoutes}
               type="button"
             >
-              {arePersonalRoutesExpanded ? 'Скрыть' : 'Показать все'}
+              {arePersonalRoutesOpen ? 'Скрыть' : 'Показать все'}
             </button>
           </div>
         ) : null}
@@ -290,11 +309,26 @@ export function ProfilePage() {
         </div>
 
         <div
-          className={`profile-history profile-history--expandable${areHistoryRoutesExpanded ? ' profile-history--expanded' : ''}`}
+          className={[
+            'profile-history',
+            'profile-history--expandable',
+            'profile-expandable',
+            `profile-expandable--${historyRoutesAnimationState}`,
+          ].join(' ')}
           ref={historyRoutesRef}
         >
-          {visibleHistoryRoutes.map((item) => (
-            <article className="profile-history__item" key={item.id}>
+          {visibleHistoryRoutes.map((item, index) => (
+            <article
+              className={[
+                'profile-history__item',
+                isExtraHistoryRoute(index)
+                  ? 'profile-expandable-item profile-expandable-item--extra'
+                  : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              key={item.id}
+            >
               <div className="profile-history__route">
                 <span className="profile-route__theme">{formatTheme(item.route.theme)}</span>
                 <h3 className="profile-history__title">{item.route.title}</h3>
@@ -324,7 +358,7 @@ export function ProfilePage() {
               onClick={toggleHistoryRoutes}
               type="button"
             >
-              {areHistoryRoutesExpanded ? 'Скрыть' : 'Показать все'}
+              {areHistoryRoutesOpen ? 'Скрыть' : 'Показать все'}
             </button>
           </div>
         ) : null}
@@ -334,18 +368,20 @@ export function ProfilePage() {
 }
 
 interface ProfileRouteCardProps {
+  className?: string
   route: Excursion
   onRemove: () => void
   onShare: () => void
 }
 
 function ProfileRouteCard({
+  className,
   route,
   onRemove,
   onShare,
 }: ProfileRouteCardProps) {
   return (
-    <article className="profile-route">
+    <article className={['profile-route', className].filter(Boolean).join(' ')}>
       <Link className="profile-route__main" to={appRoutes.excursion(route.slug)}>
         <span className="profile-route__theme">{formatTheme(route.theme)}</span>
         <h3 className="profile-route__title">{route.title}</h3>
