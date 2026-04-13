@@ -677,7 +677,7 @@ export function DiscoveryMap({
                   className="discovery-map__draft-button discovery-map__draft-button--primary discovery-map__draft-button--link"
                   to={appRoutes.signIn}
                 >
-                  Войти
+                  Сохранить
                 </Link>
               )
             ) : null}

@@ -1,4 +1,4 @@
-import {
+﻿import {
   useEffect,
   useRef,
   useState,
@@ -18,10 +18,11 @@ import {
   formatStopCount,
   formatTheme,
 } from '@/shared/lib/format'
-import { useAnimatedExpandableList } from '@/shared/lib/useAnimatedExpandableList'
 import './ProfilePage.css'
 
 const localeOptions: SupportedLocale[] = ['ru', 'en', 'de', 'fr', 'es']
+const defaultVisiblePersonalRoutesCount = 6
+const defaultVisibleHistoryRoutesCount = 3
 
 export function ProfilePage() {
   const { session, updateProfile } = useAuth()
@@ -37,34 +38,34 @@ export function ProfilePage() {
   const profile = session?.profile ?? overview?.profile ?? null
   const [name, setName] = useState(profile?.name ?? '')
   const [email, setEmail] = useState(profile?.email ?? '')
-  const [language, setLanguage] = useState<SupportedLocale>(profile?.language ?? 'ru')
+  const [language, setLanguage] = useState<SupportedLocale>(
+    profile?.language ?? 'ru',
+  )
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
   const [isLocaleMenuOpen, setIsLocaleMenuOpen] = useState(false)
+  const [arePersonalRoutesExpanded, setArePersonalRoutesExpanded] =
+    useState(false)
+  const [areHistoryRoutesExpanded, setAreHistoryRoutesExpanded] =
+    useState(false)
   const localeSelectRef = useRef<HTMLDivElement | null>(null)
   const historyItems = overview?.routeHistory ?? []
-  const {
-    animationState: personalRoutesAnimationState,
-    canToggle: canTogglePersonalRoutes,
-    containerRef: personalRoutesRef,
-    isExpanded: arePersonalRoutesExpanded,
-    isExtraAnimatedItem: isExtraPersonalRoute,
-    toggle: togglePersonalRoutes,
-    visibleItems: visiblePersonalRoutes,
-  } = useAnimatedExpandableList(personalRoutes, 6)
-  const {
-    animationState: historyRoutesAnimationState,
-    canToggle: canToggleHistoryRoutes,
-    containerRef: historyRoutesRef,
-    isExpanded: areHistoryRoutesExpanded,
-    isExtraAnimatedItem: isExtraHistoryRoute,
-    toggle: toggleHistoryRoutes,
-    visibleItems: visibleHistoryRoutes,
-  } = useAnimatedExpandableList(historyItems, 3)
-  const arePersonalRoutesOpen =
-    arePersonalRoutesExpanded || personalRoutesAnimationState === 'expanding'
-  const areHistoryRoutesOpen =
-    areHistoryRoutesExpanded || historyRoutesAnimationState === 'expanding'
+  const visiblePersonalRoutes = personalRoutes.slice(
+    0,
+    defaultVisiblePersonalRoutesCount,
+  )
+  const extraPersonalRoutes = personalRoutes.slice(
+    defaultVisiblePersonalRoutesCount,
+  )
+  const visibleHistoryRoutes = historyItems.slice(
+    0,
+    defaultVisibleHistoryRoutesCount,
+  )
+  const extraHistoryRoutes = historyItems.slice(
+    defaultVisibleHistoryRoutesCount,
+  )
+  const canTogglePersonalRoutes = extraPersonalRoutes.length > 0
+  const canToggleHistoryRoutes = extraHistoryRoutes.length > 0
 
   useEffect(() => {
     if (!profile) {
@@ -103,7 +104,11 @@ export function ProfilePage() {
       })
       setSaveMessage('Профиль сохранен')
     } catch (nextError) {
-      setSaveMessage(nextError instanceof Error ? nextError.message : 'Не удалось сохранить профиль')
+      setSaveMessage(
+        nextError instanceof Error
+          ? nextError.message
+          : 'Не удалось сохранить профиль',
+      )
     } finally {
       setIsSaving(false)
     }
@@ -117,7 +122,8 @@ export function ProfilePage() {
             <p className="eyebrow">Личный кабинет</p>
             <h1 className="profile-page__title">Войдите в профиль</h1>
             <p className="profile-page__text">
-              Аккаунт нужен для личных маршрутов, истории прогулок и настроек языка.
+              Аккаунт нужен для личных маршрутов, истории прогулок и настроек
+              языка.
             </p>
           </div>
           <Link className="button button--primary" to={appRoutes.signIn}>
@@ -148,7 +154,8 @@ export function ProfilePage() {
           <p className="eyebrow">Личный кабинет</p>
           <h1 className="profile-page__title">{profile?.name ?? 'Профиль'}</h1>
           <p className="profile-page__text">
-            Управляйте языком аудиогида, личными маршрутами и историей прохождения.
+            Управляйте языком аудиогида, личными маршрутами и историей
+            прохождения.
           </p>
         </div>
         <Link className="button button--secondary" to={appRoutes.excursions}>
@@ -218,12 +225,18 @@ export function ProfilePage() {
 
           {saveMessage ? <p className="profile-form__message">{saveMessage}</p> : null}
 
-          <button className="button button--primary button--wide" disabled={isSaving} type="submit">
+          <button
+            className="button button--primary button--wide"
+            disabled={isSaving}
+            type="submit"
+          >
             {isSaving ? 'Сохраняем' : 'Сохранить изменения'}
           </button>
         </form>
 
-        <section className={`profile-card profile-card--large profile-card--saved${savedRoutes.length ? '' : ' profile-card--empty-art'}`}>
+        <section
+          className={`profile-card profile-card--large profile-card--saved${savedRoutes.length ? '' : ' profile-card--empty-art'}`}
+        >
           <div className="profile-card__header">
             <div>
               <p className="eyebrow">Личные маршруты</p>
@@ -243,13 +256,17 @@ export function ProfilePage() {
                 />
               ))
             ) : (
-              <p className="profile-card__text">Сохраняйте маршруты из каталога, чтобы быстро возвращаться к ним.</p>
+              <p className="profile-card__text">
+                Сохраняйте маршруты из каталога, чтобы быстро возвращаться к ним.
+              </p>
             )}
           </div>
         </section>
       </section>
 
-      <section className={`profile-card profile-card--large profile-card--personal${personalRoutes.length ? '' : ' profile-card--empty-art profile-card--wide-art'}`}>
+      <section
+        className={`profile-card profile-card--large profile-card--personal${personalRoutes.length ? '' : ' profile-card--empty-art profile-card--wide-art'}`}
+      >
         <div className="profile-card__header">
           <div>
             <p className="eyebrow">Свои прогулки</p>
@@ -258,24 +275,10 @@ export function ProfilePage() {
           <span className="chip chip--accent">{personalRoutes.length}</span>
         </div>
 
-        <div
-          className={[
-            'profile-routes',
-            'profile-routes--grid',
-            'profile-routes--expandable',
-            'profile-expandable',
-            `profile-expandable--${personalRoutesAnimationState}`,
-          ].join(' ')}
-          ref={personalRoutesRef}
-        >
+        <div className="profile-routes profile-routes--grid">
           {personalRoutes.length ? (
-            visiblePersonalRoutes.map((route, index) => (
+            visiblePersonalRoutes.map((route) => (
               <ProfileRouteCard
-                className={
-                  isExtraPersonalRoute(index)
-                    ? 'profile-expandable-item profile-expandable-item--extra'
-                    : ''
-                }
                 key={route.slug}
                 onRemove={() => removePersonalRoute(route.slug)}
                 onShare={() => void shareRoute(route)}
@@ -283,18 +286,42 @@ export function ProfilePage() {
               />
             ))
           ) : (
-            <p className="profile-card__text">Соберите маршрут из точек рядом на главной странице.</p>
+            <p className="profile-card__text">
+              Соберите маршрут из точек рядом на главной странице.
+            </p>
           )}
         </div>
+
+        {canTogglePersonalRoutes ? (
+          <div
+            className={`profile-collapsible${arePersonalRoutesExpanded ? ' profile-collapsible--open' : ''}`}
+          >
+            <div className="profile-collapsible__inner">
+              <div className="profile-collapsible__content">
+                <div className="profile-routes profile-routes--grid">
+                  {extraPersonalRoutes.map((route) => (
+                    <ProfileRouteCard
+                      className="profile-collapsible__item"
+                      key={route.slug}
+                      onRemove={() => removePersonalRoute(route.slug)}
+                      onShare={() => void shareRoute(route)}
+                      route={route}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {canTogglePersonalRoutes ? (
           <div className="profile-card__footer">
             <button
               className="button button--secondary profile-card__toggle"
-              onClick={togglePersonalRoutes}
+              onClick={() => setArePersonalRoutesExpanded((current) => !current)}
               type="button"
             >
-              {arePersonalRoutesOpen ? 'Скрыть' : 'Показать все'}
+              {arePersonalRoutesExpanded ? 'Скрыть' : 'Показать все'}
             </button>
           </div>
         ) : null}
@@ -308,57 +335,45 @@ export function ProfilePage() {
           </div>
         </div>
 
-        <div
-          className={[
-            'profile-history',
-            'profile-history--expandable',
-            'profile-expandable',
-            `profile-expandable--${historyRoutesAnimationState}`,
-          ].join(' ')}
-          ref={historyRoutesRef}
-        >
-          {visibleHistoryRoutes.map((item, index) => (
-            <article
-              className={[
-                'profile-history__item',
-                isExtraHistoryRoute(index)
-                  ? 'profile-expandable-item profile-expandable-item--extra'
-                  : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
+        <div className="profile-history">
+          {visibleHistoryRoutes.map((item) => (
+            <HistoryRouteCard
+              item={item}
               key={item.id}
-            >
-              <div className="profile-history__route">
-                <span className="profile-route__theme">{formatTheme(item.route.theme)}</span>
-                <h3 className="profile-history__title">{item.route.title}</h3>
-              </div>
-              <div className="profile-history__progress" aria-label={`Прогресс ${item.progressPercent}%`}>
-                <span style={{ width: `${item.progressPercent}%` }} />
-              </div>
-              <span className="chip">{item.status === 'completed' ? 'Завершен' : 'В процессе'}</span>
-              <Link className="button button--secondary" to={appRoutes.excursion(item.route.slug)}>
-                {item.status === 'completed' ? 'Повторить' : 'Продолжить'}
-              </Link>
-              <button
-                className="button button--ghost"
-                onClick={() => void shareRoute(item.route)}
-                type="button"
-              >
-                Поделиться
-              </button>
-            </article>
+              onShare={() => void shareRoute(item.route)}
+            />
           ))}
         </div>
+
+        {canToggleHistoryRoutes ? (
+          <div
+            className={`profile-collapsible${areHistoryRoutesExpanded ? ' profile-collapsible--open' : ''}`}
+          >
+            <div className="profile-collapsible__inner">
+              <div className="profile-collapsible__content">
+                <div className="profile-history">
+                  {extraHistoryRoutes.map((item) => (
+                    <HistoryRouteCard
+                      className="profile-collapsible__item"
+                      item={item}
+                      key={item.id}
+                      onShare={() => void shareRoute(item.route)}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {canToggleHistoryRoutes ? (
           <div className="profile-card__footer">
             <button
               className="button button--secondary profile-card__toggle"
-              onClick={toggleHistoryRoutes}
+              onClick={() => setAreHistoryRoutesExpanded((current) => !current)}
               type="button"
             >
-              {areHistoryRoutesOpen ? 'Скрыть' : 'Показать все'}
+              {areHistoryRoutesExpanded ? 'Скрыть' : 'Показать все'}
             </button>
           </div>
         ) : null}
@@ -401,6 +416,38 @@ function ProfileRouteCard({
           Убрать
         </button>
       </div>
+    </article>
+  )
+}
+
+interface HistoryRouteCardProps {
+  className?: string
+  item: NonNullable<ReturnType<typeof useProfileOverview>['overview']>['routeHistory'][number]
+  onShare: () => void
+}
+
+function HistoryRouteCard({ className, item, onShare }: HistoryRouteCardProps) {
+  return (
+    <article className={['profile-history__item', className].filter(Boolean).join(' ')}>
+      <div className="profile-history__route">
+        <span className="profile-route__theme">{formatTheme(item.route.theme)}</span>
+        <h3 className="profile-history__title">{item.route.title}</h3>
+      </div>
+      <div
+        className="profile-history__progress"
+        aria-label={`Прогресс ${item.progressPercent}%`}
+      >
+        <span style={{ width: `${item.progressPercent}%` }} />
+      </div>
+      <span className="chip">
+        {item.status === 'completed' ? 'Завершен' : 'В процессе'}
+      </span>
+      <Link className="button button--secondary" to={appRoutes.excursion(item.route.slug)}>
+        {item.status === 'completed' ? 'Повторить' : 'Продолжить'}
+      </Link>
+      <button className="button button--ghost" onClick={onShare} type="button">
+        Поделиться
+      </button>
     </article>
   )
 }

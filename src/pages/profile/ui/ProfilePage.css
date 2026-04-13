@@ -265,21 +265,52 @@
   gap: 14px;
 }
 
-.profile-routes--expandable,
-.profile-history--expandable {
-  overflow: hidden;
-  max-height: none;
+.profile-routes--grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+}
+
+.profile-collapsible {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
   transition:
-    max-height 0.42s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.32s ease;
+    grid-template-rows 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.28s ease,
+    margin-top 0.28s ease;
+  margin-top: 0;
 }
 
-.profile-expandable--expanding .profile-expandable-item--extra {
-  animation: profile-expand-item-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+.profile-collapsible--open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  margin-top: 2px;
 }
 
-.profile-expandable--collapsing .profile-expandable-item--extra {
-  animation: profile-expand-item-out 0.24s ease both;
+.profile-collapsible__inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.profile-collapsible__content {
+  padding-top: 14px;
+}
+
+.profile-collapsible:not(.profile-collapsible--open) .profile-collapsible__content {
+  padding-top: 0;
+}
+
+.profile-collapsible__item {
+  opacity: 0;
+  transform: translateY(-8px);
+  transition:
+    opacity 0.28s ease,
+    transform 0.36s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.profile-collapsible--open .profile-collapsible__item {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .profile-card--saved .profile-routes {
@@ -288,10 +319,6 @@
   padding: 4px 10px 10px 4px;
   margin: -4px -10px -10px -4px;
   scrollbar-color: rgba(31, 138, 112, 0.34) transparent;
-}
-
-.profile-routes--grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .profile-card__footer {
@@ -308,6 +335,7 @@
 
 .profile-route {
   display: grid;
+  align-content: start;
   gap: 14px;
   padding: 16px;
   border: 1px solid var(--color-line);
@@ -378,12 +406,16 @@
 .profile-route__actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
 }
 
 .profile-route__actions .button {
-  min-height: 40px;
+  flex: 0 0 auto;
+  width: auto;
+  min-height: 38px;
   padding: 0 14px;
+  box-shadow: none;
 }
 
 .profile-history {
@@ -528,34 +560,6 @@
 
   to {
     background-position: -120% 0;
-  }
-}
-
-@keyframes profile-expand-item-in {
-  from {
-    opacity: 0;
-    transform: translateY(14px) scale(0.985);
-  }
-
-  60% {
-    opacity: 1;
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes profile-expand-item-out {
-  from {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-
-  to {
-    opacity: 0;
-    transform: translateY(-8px) scale(0.985);
   }
 }
 
@@ -704,9 +708,8 @@
   .profile-select,
   .profile-select__menu,
   .profile-select__option,
-  .profile-routes--expandable,
-  .profile-history--expandable,
-  .profile-expandable-item--extra {
+  .profile-collapsible,
+  .profile-collapsible__item {
     animation: none;
     transition: none;
   }
