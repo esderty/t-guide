@@ -1,7 +1,7 @@
 package t.lab.guide.dto.point
 
 import io.swagger.v3.oas.annotations.media.Schema
-import t.lab.guide.entity.enums.MediaType
+import t.lab.guide.enums.MediaType
 
 @Schema(description = "Медиа-материал, связанный с точкой интереса (фото, видео или аудиогид)")
 data class PointMediaItem(

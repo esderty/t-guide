@@ -5,8 +5,8 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.AssertTrue
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.Size
-import t.lab.guide.entity.enums.UserLanguage
-import t.lab.guide.entity.enums.UserRole
+import t.lab.guide.enums.UserLanguage
+import t.lab.guide.enums.UserRole
 
 data class AdminPatchUserRequest(
     @Schema(

@@ -1,9 +1,9 @@
 package t.lab.guide.dto.admin.user
 
 import io.swagger.v3.oas.annotations.media.Schema
+import t.lab.guide.enums.UserLanguage
+import t.lab.guide.enums.UserRole
 import java.time.OffsetDateTime
-import t.lab.guide.entity.enums.UserLanguage
-import t.lab.guide.entity.enums.UserRole
 
 @Schema(description = "Ответ с данными пользователя для администратора")
 data class AdminUserDetailResponse(

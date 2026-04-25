@@ -11,6 +11,8 @@ import t.lab.guide.dto.excursion.ExcursionSearchRequest
 import t.lab.guide.dto.excursion.ExcursionShortItem
 import t.lab.guide.dto.excursion.SetExcursionPointsRequest
 import t.lab.guide.dto.excursion.UpdateCustomExcursionRequest
+import t.lab.guide.enums.AdminExcursionSortField
+import t.lab.guide.enums.SortDirection
 
 interface ExcursionService {
     fun searchExcursions(request: ExcursionSearchRequest): ExcursionListResponse
@@ -38,8 +40,8 @@ interface ExcursionService {
     fun getAdminExcursionsPage(
         page: Int,
         size: Int,
-        sortBy: String?,
-        sortDirection: String?,
+        sortBy: AdminExcursionSortField?,
+        sortDirection: SortDirection?,
         search: String?,
     ): AdminExcursionPageResponse
 

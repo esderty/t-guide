@@ -2,11 +2,11 @@ package t.lab.guide.dto.admin.excursion
 
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Schema
-import java.time.OffsetDateTime
 import t.lab.guide.dto.admin.point.AdminPointShortItem
 import t.lab.guide.dto.common.GeoPoint
-import t.lab.guide.entity.enums.ExcursionRouteType
-import t.lab.guide.entity.enums.ExcursionVisibility
+import t.lab.guide.enums.ExcursionRouteType
+import t.lab.guide.enums.ExcursionVisibility
+import java.time.OffsetDateTime
 
 @Schema(description = "Подробная информация об экскурсии для административного интерфейса")
 data class AdminExcursionDetailResponse(

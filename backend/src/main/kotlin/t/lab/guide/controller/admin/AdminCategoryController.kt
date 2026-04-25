@@ -91,7 +91,7 @@ class AdminCategoryController(
     )
     @PostMapping
     fun createCategory(
-        @Valid @RequestBody request: @Valid AdminCreateCategoryRequest,
+        @Valid @RequestBody request: AdminCreateCategoryRequest,
     ): ResponseEntity<CategoryItem> {
         val response = pointCategoryService.createCategory(request)
         return ResponseEntity.ok(response)
@@ -134,7 +134,7 @@ class AdminCategoryController(
     @PatchMapping("/{categoryId}")
     fun patchCategory(
         @Parameter(description = "Идентификатор категории", example = "1") @PathVariable categoryId: Long,
-        @Valid @RequestBody request: @Valid AdminPatchCategoryRequest,
+        @Valid @RequestBody request: AdminPatchCategoryRequest,
     ): ResponseEntity<CategoryItem> {
         val response = pointCategoryService.patchCategory(categoryId, request)
         return ResponseEntity.ok(response)

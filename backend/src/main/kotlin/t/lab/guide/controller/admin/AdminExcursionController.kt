@@ -9,7 +9,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import jakarta.validation.constraints.Max
+import jakarta.validation.constraints.Min
 import org.springframework.http.ResponseEntity
+import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
@@ -26,11 +29,14 @@ import t.lab.guide.dto.admin.excursion.AdminExcursionDetailResponse
 import t.lab.guide.dto.admin.excursion.AdminExcursionPageResponse
 import t.lab.guide.dto.admin.excursion.AdminPatchPrebuiltExcursionRequest
 import t.lab.guide.dto.excursion.SetExcursionPointsRequest
+import t.lab.guide.enums.AdminExcursionSortField
+import t.lab.guide.enums.SortDirection
 import t.lab.guide.service.ExcursionService
 
 @Tag(name = "Admin Excursions", description = "Управление готовыми экскурсиями")
 @RestController
 @RequestMapping("/admin/excursions")
+@Validated
 class AdminExcursionController(
     private val excursionService: ExcursionService,
 ) {
@@ -65,16 +71,16 @@ class AdminExcursionController(
     )
     @GetMapping("/page")
     fun getExcursionsPage(
-        @Parameter(description = "Номер страницы (с 0)", example = "0") @RequestParam(defaultValue = "0") page: Int,
-        @Parameter(description = "Размер страницы", example = "25") @RequestParam(defaultValue = "25") size: Int,
+        @Parameter(description = "Номер страницы (с 0)", example = "0") @RequestParam(defaultValue = "0") @Min(0) page: Int,
+        @Parameter(description = "Размер страницы", example = "25") @RequestParam(defaultValue = "25") @Min(0) @Max(100) size: Int,
         @Parameter(
             description = "Поле для сортировки (например, id, title, createdAt)",
             example = "createdAt",
-        ) @RequestParam(required = false) sortBy: String?,
+        ) @RequestParam(required = false) sortBy: AdminExcursionSortField?,
         @Parameter(
             description = "Направление сортировки: ASC или DESC",
             example = "DESC",
-        ) @RequestParam(required = false) sortDirection: String?,
+        ) @RequestParam(required = false) sortDirection: SortDirection?,
         @Parameter(
             description = "Строка поиска по названию",
             example = "центр",
@@ -163,7 +169,7 @@ class AdminExcursionController(
     )
     @PostMapping
     fun createPrebuiltExcursion(
-        @Valid @RequestBody request: @Valid AdminCreatePrebuiltExcursionRequest,
+        @Valid @RequestBody request: AdminCreatePrebuiltExcursionRequest,
     ): ResponseEntity<AdminExcursionDetailResponse> {
         val response: AdminExcursionDetailResponse = excursionService.createPrebuiltExcursion(request)
         return ResponseEntity.ok(response)
@@ -213,7 +219,7 @@ class AdminExcursionController(
     @PatchMapping("/{excursionId}")
     fun patchPrebuiltExcursion(
         @Parameter(description = "Идентификатор экскурсии", example = "1") @PathVariable excursionId: Long,
-        @Valid @RequestBody request: @Valid AdminPatchPrebuiltExcursionRequest,
+        @Valid @RequestBody request: AdminPatchPrebuiltExcursionRequest,
     ): ResponseEntity<AdminExcursionDetailResponse> {
         val response: AdminExcursionDetailResponse = excursionService.patchPrebuiltExcursion(excursionId, request)
         return ResponseEntity.ok(response)
@@ -256,7 +262,7 @@ class AdminExcursionController(
     @PutMapping("/{excursionId}/points")
     fun setExcursionPoints(
         @Parameter(description = "Идентификатор экскурсии", example = "1") @PathVariable excursionId: Long,
-        @Valid @RequestBody request: @Valid SetExcursionPointsRequest,
+        @Valid @RequestBody request: SetExcursionPointsRequest,
     ): ResponseEntity<AdminExcursionDetailResponse> {
         val response: AdminExcursionDetailResponse = excursionService.setAdminExcursionPoints(excursionId, request)
         return ResponseEntity.ok(response)

@@ -1,8 +1,8 @@
 package t.lab.guide.dto.admin.point
 
 import io.swagger.v3.oas.annotations.media.Schema
+import t.lab.guide.enums.MediaType
 import java.time.OffsetDateTime
-import t.lab.guide.entity.enums.MediaType
 
 @Schema(description = "Медиа-материал точки интереса в административном представлении (с идентификатором для управления)")
 data class AdminPointMediaItem(

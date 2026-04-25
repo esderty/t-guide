@@ -2,8 +2,8 @@ package t.lab.guide.dto.admin.point
 
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Schema
-import java.time.OffsetDateTime
 import t.lab.guide.dto.common.GeoPoint
+import java.time.OffsetDateTime
 
 @Schema(description = "Подробная информация о точке интереса для административного интерфейса")
 data class AdminPointDetailResponse(

@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
-import t.lab.guide.entity.enums.UserLanguage
+import t.lab.guide.enums.UserLanguage
 
 @Schema(description = "Данные для регистрации нового пользователя")
 data class RegistrationRequest(

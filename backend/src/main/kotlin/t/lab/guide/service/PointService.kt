@@ -10,6 +10,8 @@ import t.lab.guide.dto.admin.point.AdminUploadPointMediaRequest
 import t.lab.guide.dto.point.PointDetailResponse
 import t.lab.guide.dto.point.PointListResponse
 import t.lab.guide.dto.point.PointSearchRequest
+import t.lab.guide.enums.AdminPointSortField
+import t.lab.guide.enums.SortDirection
 
 interface PointService {
     fun searchPoints(request: PointSearchRequest): PointListResponse
@@ -19,8 +21,8 @@ interface PointService {
     fun getPointsPage(
         page: Int,
         size: Int,
-        sortBy: String?,
-        sortDirection: String?,
+        sortBy: AdminPointSortField?,
+        sortDirection: SortDirection?,
         search: String?,
     ): AdminPointPageResponse
 

@@ -5,6 +5,8 @@ import t.lab.guide.dto.admin.user.AdminUserDetailResponse
 import t.lab.guide.dto.admin.user.AdminUserPageResponse
 import t.lab.guide.dto.user.PatchUserRequest
 import t.lab.guide.dto.user.UserResponse
+import t.lab.guide.enums.AdminUserSortField
+import t.lab.guide.enums.SortDirection
 
 interface UserService {
     fun getCurrentUser(): UserResponse
@@ -14,8 +16,8 @@ interface UserService {
     fun getUsersPage(
         page: Int,
         size: Int,
-        sortBy: String?,
-        sortDir: String?,
+        sortBy: AdminUserSortField?,
+        sortDir: SortDirection?,
         search: String?,
     ): AdminUserPageResponse
 
@@ -25,7 +27,4 @@ interface UserService {
         userId: Long,
         request: AdminPatchUserRequest,
     ): AdminUserDetailResponse
-
-    // TODO когда будут entity(model), добавить сервисные методы
-    fun userExists(userId: Long): Boolean
 }

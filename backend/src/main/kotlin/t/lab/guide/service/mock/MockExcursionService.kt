@@ -1,7 +1,5 @@
 package t.lab.guide.service.mock
 
-import java.math.BigDecimal
-import java.time.OffsetDateTime
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import t.lab.guide.dto.admin.excursion.AdminCreatePrebuiltExcursionRequest
@@ -19,11 +17,15 @@ import t.lab.guide.dto.excursion.SetExcursionPointsRequest
 import t.lab.guide.dto.excursion.UpdateCustomExcursionRequest
 import t.lab.guide.dto.point.PointListResponse
 import t.lab.guide.dto.point.PointShortItem
-import t.lab.guide.entity.enums.ExcursionRouteType
-import t.lab.guide.entity.enums.ExcursionVisibility
+import t.lab.guide.enums.AdminExcursionSortField
+import t.lab.guide.enums.ExcursionRouteType
+import t.lab.guide.enums.ExcursionVisibility
+import t.lab.guide.enums.SortDirection
 import t.lab.guide.exception.NotFoundException
 import t.lab.guide.service.ExcursionService
 import t.lab.guide.service.SecurityService
+import java.math.BigDecimal
+import java.time.OffsetDateTime
 
 @Service
 @Profile("demo")
@@ -119,8 +121,8 @@ class MockExcursionService(
     override fun getAdminExcursionsPage(
         page: Int,
         size: Int,
-        sortBy: String?,
-        sortDirection: String?,
+        sortBy: AdminExcursionSortField?,
+        sortDirection: SortDirection?,
         search: String?,
     ): AdminExcursionPageResponse {
         val filtered =

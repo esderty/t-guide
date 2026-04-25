@@ -1,8 +1,8 @@
 package t.lab.guide.dto.admin.user
 
 import io.swagger.v3.oas.annotations.media.Schema
+import t.lab.guide.enums.UserRole
 import java.time.OffsetDateTime
-import t.lab.guide.entity.enums.UserRole
 
 @Schema(description = "Краткая информация о пользователе для списка в админ-панели")
 data class AdminUserShortItem(

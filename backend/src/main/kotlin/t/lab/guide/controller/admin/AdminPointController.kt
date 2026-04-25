@@ -9,8 +9,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import jakarta.validation.constraints.Max
+import jakarta.validation.constraints.Min
+import jakarta.validation.constraints.Size
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
@@ -29,11 +33,14 @@ import t.lab.guide.dto.admin.point.AdminPointDetailResponse
 import t.lab.guide.dto.admin.point.AdminPointMediaItem
 import t.lab.guide.dto.admin.point.AdminPointPageResponse
 import t.lab.guide.dto.admin.point.AdminUploadPointMediaRequest
+import t.lab.guide.enums.AdminPointSortField
+import t.lab.guide.enums.SortDirection
 import t.lab.guide.service.PointService
 
 @Tag(name = "Admin Points", description = "Управление точками интереса")
 @RestController
 @RequestMapping("/admin/points")
+@Validated
 class AdminPointController(
     private val pointService: PointService,
 ) {
@@ -65,20 +72,20 @@ class AdminPointController(
     )
     @GetMapping("/page")
     fun getPointsPage(
-        @Parameter(description = "Номер страницы (с 0)", example = "0") @RequestParam(defaultValue = "0") page: Int,
-        @Parameter(description = "Размер страницы", example = "25") @RequestParam(defaultValue = "25") size: Int,
+        @Parameter(description = "Номер страницы (с 0)", example = "0") @RequestParam(defaultValue = "0") @Min(0) page: Int,
+        @Parameter(description = "Размер страницы", example = "25") @RequestParam(defaultValue = "25") @Min(1) @Max(100) size: Int,
         @Parameter(
             description = "Поле для сортировки (например, id, title, createdAt)",
             example = "createdAt",
-        ) @RequestParam(required = false) sortBy: String?,
+        ) @RequestParam(required = false) sortBy: AdminPointSortField?,
         @Parameter(
             description = "Направление сортировки: ASC или DESC",
             example = "DESC",
-        ) @RequestParam(required = false) sortDirection: String?,
+        ) @RequestParam(required = false) sortDirection: SortDirection?,
         @Parameter(
             description = "Строка поиска по title",
             example = "площадь",
-        ) @RequestParam(required = false) search: String?,
+        ) @RequestParam(required = false) @Size(max = 100) search: String?,
     ): ResponseEntity<AdminPointPageResponse> {
         val response: AdminPointPageResponse = pointService.getPointsPage(page, size, sortBy, sortDirection, search)
         return ResponseEntity.ok(response)
@@ -154,7 +161,7 @@ class AdminPointController(
     )
     @PostMapping
     fun createPoint(
-        @Valid @RequestBody request: @Valid AdminCreatePointRequest,
+        @Valid @RequestBody request: AdminCreatePointRequest,
     ): ResponseEntity<AdminPointDetailResponse> {
         val response: AdminPointDetailResponse = pointService.createPoint(request)
         return ResponseEntity.ok(response)
@@ -197,7 +204,7 @@ class AdminPointController(
     @PatchMapping("/{pointId}")
     fun patchPoint(
         @Parameter(description = "Идентификатор точки интереса", example = "1") @PathVariable pointId: Long,
-        @Valid @RequestBody request: @Valid AdminPatchPointRequest,
+        @Valid @RequestBody request: AdminPatchPointRequest,
     ): ResponseEntity<AdminPointDetailResponse> {
         val response: AdminPointDetailResponse = pointService.patchPoint(pointId, request)
         return ResponseEntity.ok(response)
@@ -270,7 +277,7 @@ class AdminPointController(
     fun uploadPointMedia(
         @Parameter(description = "Идентификатор точки интереса", example = "1") @PathVariable pointId: Long,
         @Parameter(description = "Файл медиа-материала (фото, видео, аудио)") @RequestPart("file") file: MultipartFile,
-        @Valid @RequestPart("metadata") metadata: @Valid AdminUploadPointMediaRequest,
+        @Valid @RequestPart("metadata") metadata: AdminUploadPointMediaRequest,
     ): ResponseEntity<AdminPointMediaItem> {
         val response: AdminPointMediaItem = pointService.uploadPointMedia(pointId, file, metadata)
         return ResponseEntity.ok(response)

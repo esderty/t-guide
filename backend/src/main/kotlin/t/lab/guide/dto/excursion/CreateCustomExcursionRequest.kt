@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
+import jakarta.validation.constraints.Size
 
 @Schema(description = "Данные для сохранения пользовательской экскурсии")
 data class CreateCustomExcursionRequest(
@@ -30,6 +31,7 @@ data class CreateCustomExcursionRequest(
             ),
     )
     @field:NotEmpty(message = "поле обязательно!")
+    @field:Size(min = 1, max = 25, message = "количество точек должно быть от 1 до 25!")
     @field:Valid
     val points: List<ExcursionPointOrderItem>,
 )

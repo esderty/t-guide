@@ -11,8 +11,8 @@ import t.lab.guide.dto.auth.RegistrationRequest
 import t.lab.guide.dto.auth.RegistrationResponse
 import t.lab.guide.dto.auth.TokenPairResponse
 import t.lab.guide.dto.user.UserResponse
-import t.lab.guide.entity.enums.UserLanguage
-import t.lab.guide.entity.enums.UserRole
+import t.lab.guide.enums.UserLanguage
+import t.lab.guide.enums.UserRole
 import t.lab.guide.service.AuthService
 import t.lab.guide.service.SecurityService
 

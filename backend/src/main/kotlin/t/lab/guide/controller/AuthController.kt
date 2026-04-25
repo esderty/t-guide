@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
-import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
@@ -16,7 +15,6 @@ import org.springframework.web.bind.annotation.RestController
 import t.lab.guide.dto.ApiErrorResponse
 import t.lab.guide.dto.auth.AuthRequest
 import t.lab.guide.dto.auth.AuthResponse
-import t.lab.guide.dto.auth.ChangePasswordRequest
 import t.lab.guide.dto.auth.LogoutRequest
 import t.lab.guide.dto.auth.RefreshRequest
 import t.lab.guide.dto.auth.RegistrationRequest
@@ -55,7 +53,7 @@ class AuthController(
     )
     @PostMapping("/registration")
     fun registerUser(
-        @Valid @RequestBody request: @Valid RegistrationRequest,
+        @Valid @RequestBody request: RegistrationRequest,
     ): ResponseEntity<RegistrationResponse> {
         val response: RegistrationResponse = authService.registerUser(request)
         return ResponseEntity.ok(response)
@@ -83,7 +81,7 @@ class AuthController(
     )
     @PostMapping("/login")
     fun authenticateUser(
-        @Valid @RequestBody request: @Valid AuthRequest,
+        @Valid @RequestBody request: AuthRequest,
     ): ResponseEntity<AuthResponse> {
         val response: AuthResponse = authService.authenticateUser(request)
         return ResponseEntity.ok(response)
@@ -110,42 +108,10 @@ class AuthController(
     )
     @PostMapping("/logout")
     fun logoutUser(
-        @Valid @RequestBody request: @Valid LogoutRequest,
+        @Valid @RequestBody request: LogoutRequest,
     ): ResponseEntity<Void> {
         authService.logoutUser(request)
         return ResponseEntity.noContent().build()
-    }
-
-    @Operation(
-        summary = "Смена пароля",
-        description = "Изменяет пароль пользователя и возвращает новую пару токенов.",
-        security = [SecurityRequirement(name = "bearerAuth")],
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(
-                responseCode = "200",
-                description = "Пароль успешно изменён",
-                content = [Content(schema = Schema(implementation = TokenPairResponse::class))],
-            ),
-            ApiResponse(
-                responseCode = "400",
-                description = "Некорректные данные запроса или неверный текущий пароль",
-                content = [Content(schema = Schema(implementation = ApiErrorResponse::class))],
-            ),
-            ApiResponse(
-                responseCode = "401",
-                description = "Пользователь не авторизован",
-                content = [Content(schema = Schema(implementation = ApiErrorResponse::class))],
-            ),
-        ],
-    )
-    @PostMapping("/change-password")
-    fun changePassword(
-        @Valid @RequestBody request: @Valid ChangePasswordRequest,
-    ): ResponseEntity<TokenPairResponse> {
-        val response: TokenPairResponse = authService.changePassword(request)
-        return ResponseEntity.ok(response)
     }
 
     @Operation(
@@ -173,7 +139,7 @@ class AuthController(
     )
     @PostMapping("/refresh")
     fun refreshUser(
-        @Valid @RequestBody request: @Valid RefreshRequest,
+        @Valid @RequestBody request: RefreshRequest,
     ): ResponseEntity<TokenPairResponse> {
         val response: TokenPairResponse = authService.refreshToken(request)
         return ResponseEntity.ok(response)

@@ -3,7 +3,7 @@
 Мобильное приложение-аудиогид по достопримечательностям Самары.
 
 ## 🚀 Стек технологий
-*   **Backend:** Java 17, Spring Boot 3.4, Spring Data JPA.
+*   **Backend:** Kotlin, Spring Boot 4.0.4, Spring Data JPA.
 *   **Frontend:** React (Vite), Tailwind CSS.
 *   **Database:** PostgreSQL 15 (в Docker).
 *   **Mobile:** Capacitor (сборка в Android APK).

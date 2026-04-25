@@ -3,7 +3,7 @@ package t.lab.guide.dto.admin.point
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotNull
-import t.lab.guide.entity.enums.MediaType
+import t.lab.guide.enums.MediaType
 
 @Schema(description = "Метаданные загружаемого медиа-материала (фото, видео, аудио) к точке интереса")
 data class AdminUploadPointMediaRequest(

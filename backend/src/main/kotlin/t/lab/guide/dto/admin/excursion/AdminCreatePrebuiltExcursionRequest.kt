@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.Size
 import t.lab.guide.dto.excursion.ExcursionPointOrderItem
-import t.lab.guide.entity.enums.ExcursionVisibility
+import t.lab.guide.enums.ExcursionVisibility
 
 @Schema(description = "Запрос на создание готовой (PREBUILT) экскурсии администратором")
 data class AdminCreatePrebuiltExcursionRequest(
@@ -44,6 +44,7 @@ data class AdminCreatePrebuiltExcursionRequest(
             ),
     )
     @field:NotEmpty(message = "поле обязательно!")
+    @field:Size(min = 1, max = 25, message = "количество точек должно быть от 1 до 25!")
     @field:Valid
     val points: List<ExcursionPointOrderItem>,
 )

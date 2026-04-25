@@ -1,6 +1,5 @@
 package t.lab.guide.service.mock
 
-import java.time.OffsetDateTime
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import t.lab.guide.dto.admin.user.AdminPatchUserRequest
@@ -9,10 +8,13 @@ import t.lab.guide.dto.admin.user.AdminUserPageResponse
 import t.lab.guide.dto.admin.user.AdminUserShortItem
 import t.lab.guide.dto.user.PatchUserRequest
 import t.lab.guide.dto.user.UserResponse
-import t.lab.guide.entity.enums.UserLanguage
-import t.lab.guide.entity.enums.UserRole
+import t.lab.guide.enums.AdminUserSortField
+import t.lab.guide.enums.SortDirection
+import t.lab.guide.enums.UserLanguage
+import t.lab.guide.enums.UserRole
 import t.lab.guide.service.SecurityService
 import t.lab.guide.service.UserService
+import java.time.OffsetDateTime
 
 @Service
 @Profile("demo")
@@ -35,7 +37,7 @@ class MockUserService(
         val userId = securityService.getCurrentUserId()
         return UserResponse(
             id = userId,
-            username = request.userName ?: "username$userId",
+            username = request.username ?: "username$userId",
             email = request.email ?: "user$userId@example.com",
             name = request.name ?: "User $userId",
             language = request.language ?: UserLanguage.RU,
@@ -46,8 +48,8 @@ class MockUserService(
     override fun getUsersPage(
         page: Int,
         size: Int,
-        sortBy: String?,
-        sortDir: String?,
+        sortBy: AdminUserSortField?,
+        sortDir: SortDirection?,
         search: String?,
     ): AdminUserPageResponse {
         val totalElements = 531L
@@ -120,6 +122,4 @@ class MockUserService(
             updatedAt = OffsetDateTime.now(),
         )
     }
-
-    override fun userExists(userId: Long): Boolean = true
 }

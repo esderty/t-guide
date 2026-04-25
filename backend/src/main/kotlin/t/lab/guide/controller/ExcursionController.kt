@@ -55,7 +55,7 @@ class ExcursionController(
     )
     @PostMapping("/search")
     fun searchExcursions(
-        @Valid @RequestBody request: @Valid ExcursionSearchRequest,
+        @Valid @RequestBody request: ExcursionSearchRequest,
     ): ResponseEntity<ExcursionListResponse> {
         val response: ExcursionListResponse = excursionService.searchExcursions(request)
         return ResponseEntity.ok(response)
@@ -113,7 +113,7 @@ class ExcursionController(
     )
     @PostMapping
     fun createCustomExcursion(
-        @Valid @RequestBody request: @Valid CreateCustomExcursionRequest,
+        @Valid @RequestBody request: CreateCustomExcursionRequest,
     ): ResponseEntity<ExcursionDetailResponse> {
         val response: ExcursionDetailResponse = excursionService.createCustomExcursion(request)
         return ResponseEntity.ok(response)
@@ -156,7 +156,7 @@ class ExcursionController(
     @PatchMapping("/{excursionId}")
     fun updateCustomExcursion(
         @Parameter(description = "Идентификатор экскурсии", example = "1") @PathVariable excursionId: Long,
-        @Valid @RequestBody request: @Valid UpdateCustomExcursionRequest,
+        @Valid @RequestBody request: UpdateCustomExcursionRequest,
     ): ResponseEntity<ExcursionShortItem> {
         val response: ExcursionShortItem = excursionService.updateCustomExcursion(excursionId, request)
         return ResponseEntity.ok(response)
@@ -199,7 +199,7 @@ class ExcursionController(
     @PutMapping("/{excursionId}/points")
     fun setExcursionPoints(
         @Parameter(description = "Идентификатор экскурсии", example = "1") @PathVariable excursionId: Long,
-        @Valid @RequestBody request: @Valid SetExcursionPointsRequest,
+        @Valid @RequestBody request: SetExcursionPointsRequest,
     ): ResponseEntity<ExcursionDetailResponse> {
         val response: ExcursionDetailResponse = excursionService.setExcursionPoints(excursionId, request)
         return ResponseEntity.ok(response)

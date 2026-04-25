@@ -1,7 +1,5 @@
 package t.lab.guide.service.mock
 
-import java.math.BigDecimal
-import java.time.OffsetDateTime
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
@@ -19,9 +17,13 @@ import t.lab.guide.dto.point.PointMediaItem
 import t.lab.guide.dto.point.PointSearchRequest
 import t.lab.guide.dto.point.PointShortItem
 import t.lab.guide.dto.point.category.CategoryItem
-import t.lab.guide.entity.enums.MediaType
+import t.lab.guide.enums.AdminPointSortField
+import t.lab.guide.enums.MediaType
+import t.lab.guide.enums.SortDirection
 import t.lab.guide.exception.NotFoundException
 import t.lab.guide.service.PointService
+import java.math.BigDecimal
+import java.time.OffsetDateTime
 
 @Service
 @Profile("demo")
@@ -49,8 +51,8 @@ class MockPointService : PointService {
     override fun getPointsPage(
         page: Int,
         size: Int,
-        sortBy: String?,
-        sortDirection: String?,
+        sortBy: AdminPointSortField?,
+        sortDirection: SortDirection?,
         search: String?,
     ): AdminPointPageResponse {
         val totalElements = 247L

@@ -3,8 +3,8 @@ package t.lab.guide.dto.excursion
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Schema
 import t.lab.guide.dto.common.GeoPoint
-import t.lab.guide.entity.enums.ExcursionRouteType
-import t.lab.guide.entity.enums.ExcursionVisibility
+import t.lab.guide.enums.ExcursionRouteType
+import t.lab.guide.enums.ExcursionVisibility
 
 @Schema(description = "Краткая информация об экскурсии")
 data class ExcursionShortItem(

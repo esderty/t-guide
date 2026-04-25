@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.AssertTrue
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.Size
-import t.lab.guide.entity.enums.UserLanguage
+import t.lab.guide.enums.UserLanguage
 
 @Schema(
     description = "Данные для частичного обновления информации о пользователе. Все поля необязательные, при их наличии будут обновлены соответствующие данные пользователя.",
@@ -18,7 +18,7 @@ data class PatchUserRequest(
         example = "new_username",
     )
     @field:Size(max = 50)
-    val userName: String? = null,
+    val username: String? = null,
     @Schema(
         description = "Новый адрес электронной почты",
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
@@ -46,5 +46,5 @@ data class PatchUserRequest(
     @AssertTrue(message = "Хотя бы одно поле должно быть заполнено для обновления")
     @JsonIgnore
     @Schema(hidden = true)
-    fun isAnyFieldPresent(): Boolean = userName != null || email != null || name != null || language != null
+    fun isAnyFieldPresent(): Boolean = username != null || email != null || name != null || language != null
 }

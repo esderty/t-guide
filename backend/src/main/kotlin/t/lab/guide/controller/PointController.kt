@@ -47,7 +47,7 @@ class PointController(
     )
     @PostMapping("/search")
     fun searchPoints(
-        @Valid @RequestBody request: @Valid PointSearchRequest,
+        @Valid @RequestBody request: PointSearchRequest,
     ): ResponseEntity<PointListResponse> {
         val response: PointListResponse = pointService.searchPoints(request)
         return ResponseEntity.ok(response)

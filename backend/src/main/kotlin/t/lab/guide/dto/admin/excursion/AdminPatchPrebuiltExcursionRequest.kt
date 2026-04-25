@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.AssertTrue
 import jakarta.validation.constraints.Size
-import t.lab.guide.entity.enums.ExcursionVisibility
+import t.lab.guide.enums.ExcursionVisibility
 
 @Schema(
     description =

@@ -1,4 +1,4 @@
-package t.lab.guide.entity.enums
+package t.lab.guide.enums
 
 enum class UserRole {
     USER,

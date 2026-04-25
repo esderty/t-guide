@@ -11,12 +11,16 @@ import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import t.lab.guide.dto.ApiErrorResponse
+import t.lab.guide.dto.auth.ChangePasswordRequest
+import t.lab.guide.dto.auth.TokenPairResponse
 import t.lab.guide.dto.user.PatchUserRequest
 import t.lab.guide.dto.user.UserResponse
+import t.lab.guide.service.AuthService
 import t.lab.guide.service.UserService
 
 @Tag(name = "Profile", description = "Управление профилем текущего пользователя")
@@ -24,6 +28,7 @@ import t.lab.guide.service.UserService
 @RequestMapping("/profile")
 class ProfileController(
     private val userService: UserService,
+    private val authService: AuthService,
 ) {
     @Operation(
         summary = "Получить профиль",
@@ -81,9 +86,41 @@ class ProfileController(
     )
     @PatchMapping
     fun patchProfile(
-        @Valid @RequestBody request: @Valid PatchUserRequest,
+        @Valid @RequestBody request: PatchUserRequest,
     ): ResponseEntity<UserResponse> {
         val response: UserResponse = userService.patchUser(request)
+        return ResponseEntity.ok(response)
+    }
+
+    @Operation(
+        summary = "Смена пароля",
+        description = "Изменяет пароль пользователя и возвращает новую пару токенов.",
+        security = [SecurityRequirement(name = "bearerAuth")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Пароль успешно изменён",
+                content = [Content(schema = Schema(implementation = TokenPairResponse::class))],
+            ),
+            ApiResponse(
+                responseCode = "400",
+                description = "Некорректные данные запроса или неверный текущий пароль",
+                content = [Content(schema = Schema(implementation = ApiErrorResponse::class))],
+            ),
+            ApiResponse(
+                responseCode = "401",
+                description = "Пользователь не авторизован",
+                content = [Content(schema = Schema(implementation = ApiErrorResponse::class))],
+            ),
+        ],
+    )
+    @PostMapping("/change-password")
+    fun changePassword(
+        @Valid @RequestBody request: ChangePasswordRequest,
+    ): ResponseEntity<TokenPairResponse> {
+        val response: TokenPairResponse = authService.changePassword(request)
         return ResponseEntity.ok(response)
     }
 }

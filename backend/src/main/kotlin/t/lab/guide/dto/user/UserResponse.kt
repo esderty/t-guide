@@ -1,8 +1,8 @@
 package t.lab.guide.dto.user
 
 import io.swagger.v3.oas.annotations.media.Schema
-import t.lab.guide.entity.enums.UserLanguage
-import t.lab.guide.entity.enums.UserRole
+import t.lab.guide.enums.UserLanguage
+import t.lab.guide.enums.UserRole
 
 @Schema(description = "Ответ с данными пользователя")
 data class UserResponse(
