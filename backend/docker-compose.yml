@@ -1,28 +1,26 @@
-version: '3.8'
-
 services:
 
   db:
-    image: postgres:15-alpine
+    image: postgis/postgis:16-3.4-alpine
     container_name: t-guide-db
     environment:
       - POSTGRES_DB=tguide
-      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_USER=${DB_USERNAME}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
     ports:
-      - "5432:5432"
+      - "5433:5432" # For dev
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
   backend:
+    container_name: t-guide-backend
     build:
-        context: .
-        dockerfile: Dockerfile
+      context: .
+      dockerfile: Dockerfile
     restart: always
     env_file: .env
-    depends_on:
-      redis:
-        condition: service_healthy
+    ports:
+      - "8080:8080"
     healthcheck:
       test: [ "CMD-SHELL", "curl -fsS http://localhost:8080/api/actuator/health | grep -q '\"status\":\"UP\"' || exit 1" ]
       interval: 10s
