@@ -26,7 +26,7 @@ data class ExcursionSearchRequest(
     )
     @field:NotNull(message = "поле обязательно!")
     @field:Min(value = 1, message = "радиус должен быть не меньше 1 километра!")
-    @field:Max(value = 5, message = "радиус должен быть не больше 5 километров!")
+    @field:Max(value = 15, message = "радиус должен быть не больше 15 километров!")
     val radiusKilometers: Int,
     @ArraySchema(
         schema = Schema(description = "Идентификатор категории экскурсий", example = "1"),
