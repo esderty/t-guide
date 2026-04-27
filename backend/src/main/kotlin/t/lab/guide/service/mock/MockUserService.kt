@@ -4,12 +4,11 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import t.lab.guide.dto.admin.user.AdminPatchUserRequest
 import t.lab.guide.dto.admin.user.AdminUserDetailResponse
+import t.lab.guide.dto.admin.user.AdminUserPageQuery
 import t.lab.guide.dto.admin.user.AdminUserPageResponse
 import t.lab.guide.dto.admin.user.AdminUserShortItem
 import t.lab.guide.dto.user.PatchUserRequest
 import t.lab.guide.dto.user.UserResponse
-import t.lab.guide.enums.AdminUserSortField
-import t.lab.guide.enums.SortDirection
 import t.lab.guide.enums.UserLanguage
 import t.lab.guide.enums.UserRole
 import t.lab.guide.service.SecurityService
@@ -45,24 +44,16 @@ class MockUserService(
         )
     }
 
-    override fun getUsersPage(
-        page: Int,
-        size: Int,
-        sortBy: AdminUserSortField?,
-        sortDir: SortDirection?,
-        search: String?,
-    ): AdminUserPageResponse {
+    override fun getUsersPage(query: AdminUserPageQuery): AdminUserPageResponse {
         val totalElements = 531L
-        val safePage = page.coerceAtLeast(0)
-        val safeSize = size.coerceIn(0, 100)
         val totalPages =
-            if (safeSize == 0) {
+            if (query.size == 0) {
                 0
             } else {
-                ((totalElements + safeSize - 1) / safeSize).toInt()
+                ((totalElements + query.size - 1) / query.size).toInt()
             }
-        val from = safePage * safeSize
-        val to = minOf((from + safeSize).toLong(), totalElements).toInt()
+        val from = query.page * query.size
+        val to = minOf((from + query.size).toLong(), totalElements).toInt()
         val count = (to - from).coerceAtLeast(0)
 
         val users =
@@ -81,8 +72,8 @@ class MockUserService(
             }
         return AdminUserPageResponse(
             users = users,
-            page = safePage,
-            size = safeSize,
+            page = query.page,
+            size = query.size,
             totalElements = totalElements,
             totalPages = totalPages,
         )

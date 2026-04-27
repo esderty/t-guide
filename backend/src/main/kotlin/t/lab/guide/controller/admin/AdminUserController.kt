@@ -9,9 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
-import jakarta.validation.constraints.Max
-import jakarta.validation.constraints.Min
-import jakarta.validation.constraints.Size
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
@@ -19,14 +17,12 @@ import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import t.lab.guide.dto.ApiErrorResponse
 import t.lab.guide.dto.admin.user.AdminPatchUserRequest
 import t.lab.guide.dto.admin.user.AdminUserDetailResponse
+import t.lab.guide.dto.admin.user.AdminUserPageQuery
 import t.lab.guide.dto.admin.user.AdminUserPageResponse
-import t.lab.guide.enums.AdminUserSortField
-import t.lab.guide.enums.SortDirection
 import t.lab.guide.service.UserService
 
 @Validated
@@ -64,24 +60,8 @@ class AdminUserController(
     )
     @GetMapping("/page")
     fun getUsersPage(
-        @Parameter(description = "Номер страницы (с 0)", example = "0") @RequestParam(defaultValue = "0") @Min(0) page: Int,
-        @Parameter(description = "Размер страницы", example = "25") @RequestParam(defaultValue = "25") @Min(1) @Max(100) size: Int,
-        @Parameter(
-            description = "Поле для сортировки (например, id, username, createdAt)",
-            example = "createdAt",
-        ) @RequestParam(required = false) sortBy: AdminUserSortField?,
-        @Parameter(
-            description = "Направление сортировки: ASC или DESC",
-            example = "DESC",
-        ) @RequestParam(required = false) sortDirection: SortDirection?,
-        @Parameter(
-            description = "Строка поиска по username/email/name",
-            example = "ivan",
-        ) @RequestParam(required = false) @Size(max = 100) search: String?,
-    ): ResponseEntity<AdminUserPageResponse> {
-        val response: AdminUserPageResponse = userService.getUsersPage(page, size, sortBy, sortDirection, search)
-        return ResponseEntity.ok(response)
-    }
+        @ParameterObject @Valid query: AdminUserPageQuery,
+    ): ResponseEntity<AdminUserPageResponse> = ResponseEntity.ok(userService.getUsersPage(query))
 
     @Operation(
         summary = "Детали пользователя",

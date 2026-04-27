@@ -1,10 +1,13 @@
 package t.lab.guide.service.real
 
 import org.springframework.context.annotation.Profile
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import t.lab.guide.domain.User
 import t.lab.guide.dto.admin.user.AdminPatchUserRequest
 import t.lab.guide.dto.admin.user.AdminUserDetailResponse
+import t.lab.guide.dto.admin.user.AdminUserPageQuery
 import t.lab.guide.dto.admin.user.AdminUserPageResponse
 import t.lab.guide.dto.user.PatchUserRequest
 import t.lab.guide.dto.user.UserResponse
@@ -58,34 +61,24 @@ class RealUserService(
         return userRepository.save(updatedUser).toUserResponse()
     }
 
-    override fun getUsersPage(
-        page: Int,
-        size: Int,
-        sortBy: AdminUserSortField?,
-        sortDir: SortDirection?,
-        search: String?,
-    ): AdminUserPageResponse {
-        val safePage = page.coerceAtLeast(0)
-        val safeSize = size.coerceIn(25, 100)
+    override fun getUsersPage(query: AdminUserPageQuery): AdminUserPageResponse {
+        val safeSearch = query.search?.trim()?.takeIf { it.isNotEmpty() }
 
-        val safeSearch = search?.trim()?.takeIf { it.isNotEmpty() }
+        val sortColumn = (query.sortBy ?: AdminUserSortField.CREATED_AT).value
+        val direction =
+            if (query.sortDirection == SortDirection.ASC) Sort.Direction.ASC else Sort.Direction.DESC
+        val pageable = PageRequest.of(query.page, query.size, Sort.by(direction, sortColumn))
 
-        val users =
-            userRepository
-                .findUsersPage(
-                    search = safeSearch,
-                    sortBy = sortBy?.value ?: DEFAULT_SORT,
-                    offset = (safePage * safeSize).toLong(),
-                    limit = safeSize,
-                )
+        val users = userRepository.findUsersPage(safeSearch, pageable)
         val total = userRepository.countUsers(safeSearch)
+        val totalPages = if (query.size == 0) 0 else ((total + query.size - 1) / query.size).toInt()
 
         return AdminUserPageResponse(
             users = users,
-            page = safePage,
-            size = safeSize,
+            page = query.page,
+            size = query.size,
             totalElements = total,
-            totalPages = ((total + safeSize - 1) / safeSize).toInt(),
+            totalPages = totalPages,
         )
     }
 
@@ -130,8 +123,4 @@ class RealUserService(
         userRepository
             .findById(userId)
             .orElseThrow { NotFoundException("User $userId not found") }
-
-    private companion object {
-        const val DEFAULT_SORT = "createdAt"
-    }
 }

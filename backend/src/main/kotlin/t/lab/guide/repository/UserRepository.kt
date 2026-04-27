@@ -1,5 +1,6 @@
 package t.lab.guide.repository
 
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jdbc.repository.query.Query
 import org.springframework.data.repository.CrudRepository
 import t.lab.guide.domain.User
@@ -43,19 +44,11 @@ interface UserRepository : CrudRepository<User, Long> {
       from "user" u
       where (:search is null or u.username ilike '%' || :search || '%'
                             or u.email    ilike '%' || :search || '%')
-      order by
-          case when :sortBy = 'username'  then u.username  end,
-          case when :sortBy = 'email'     then u.email     end,
-          case when :sortBy = 'createdAt' then u.created_at end,
-          u.id
-      offset :offset limit :limit
       """,
     )
     fun findUsersPage(
         search: String?,
-        sortBy: String,
-        offset: Long,
-        limit: Int,
+        pageable: Pageable,
     ): List<AdminUserShortItem>
 
     @Query(
