@@ -12,6 +12,25 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command:
+      - redis-server
+      - --requirepass
+      - ${REDIS_PASSWORD}
+      - --appendonly
+      - "yes"
+    ports:
+        - "6379:6379" # For dev
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     container_name: t-guide-backend
     build:
@@ -19,6 +38,9 @@ services:
       dockerfile: Dockerfile
     restart: always
     env_file: .env
+    depends_on:
+      - db
+      - redis
     ports:
       - "8080:8080"
     healthcheck:
@@ -29,3 +51,4 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
