@@ -19,16 +19,23 @@ data class ExcursionShortItem(
     @Schema(description = "Название экскурсии", example = "Исторический центр Москвы")
     val title: String,
     @Schema(
+        description = "Описание экскурсии",
+        example = "Прогулка по центру Москвы с посещением главных достопримечательностей.",
+        nullable = true,
+    )
+    val description: String? = null,
+    @Schema(
         description = "Краткое описание экскурсии",
         example = "Прогулка по главным достопримечательностям центра столицы.",
+        nullable = true,
     )
-    val description: String,
+    val shortDescription: String? = null,
     @Schema(description = "Протяжённость маршрута в метрах", example = "3200")
     val distance: Int,
     @Schema(description = "Продолжительность экскурсии в минутах", example = "120")
     val durationMin: Int,
     @Schema(description = "Количество точек в маршруте", example = "5")
-    val pointCounts: Int,
+    val pointsCount: Int,
     @Schema(description = "Координаты начальной точки маршрута")
     val coordinates: GeoPoint,
     @ArraySchema(

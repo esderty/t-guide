@@ -55,7 +55,7 @@ class RealUserService(
                 email = request.email ?: currentUser.email,
                 username = request.username ?: currentUser.username,
                 name = request.name ?: currentUser.name,
-                lang = request.language ?: currentUser.lang,
+                lang = request.lang ?: currentUser.lang,
             )
 
         return userRepository.save(updatedUser).toUserResponse()

@@ -15,16 +15,16 @@ data class AdminPatchUserRequest(
         maxLength = 50,
         example = "new_username",
     )
-    @field:Size(max = 50)
+    @field:Size(max = 50, message = "максимальная длина логина - 50 символов!")
     val username: String? = null,
     @Schema(
         description = "Новый адрес электронной почты",
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-        maxLength = 50,
+        maxLength = 254,
         example = "mail@domain.zone",
     )
-    @field:Email
-    @field:Size(max = 50)
+    @field:Email(message = "некорректный формат email")
+    @field:Size(max = 254, message = "максимальная длина email - 254 символов!")
     val email: String? = null,
     @Schema(
         description = "Новый язык интерфейса пользователя",

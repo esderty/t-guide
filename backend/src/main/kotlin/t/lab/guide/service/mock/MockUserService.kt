@@ -27,7 +27,7 @@ class MockUserService(
             username = "username$userId",
             email = "user$userId@example.com",
             name = "User $userId",
-            language = UserLanguage.RU,
+            lang = UserLanguage.RU,
             role = UserRole.USER,
         )
     }
@@ -39,7 +39,7 @@ class MockUserService(
             username = request.username ?: "username$userId",
             email = request.email ?: "user$userId@example.com",
             name = request.name ?: "User $userId",
-            language = request.language ?: UserLanguage.RU,
+            lang = request.lang ?: UserLanguage.RU,
             role = UserRole.USER,
         )
     }

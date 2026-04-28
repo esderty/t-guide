@@ -9,8 +9,8 @@ import java.time.OffsetDateTime
 data class PointCategory(
     @Id
     val id: Long? = null,
-    val name: String = "",
-    val slug: String = "",
+    val name: String,
+    val slug: String,
     @CreatedDate
     val createdAt: OffsetDateTime? = null,
 )

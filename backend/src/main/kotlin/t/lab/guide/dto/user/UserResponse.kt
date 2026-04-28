@@ -15,7 +15,7 @@ data class UserResponse(
     @Schema(description = "Отображаемое имя пользователя", example = "Игорь")
     val name: String,
     @Schema(description = "Язык интерфейса пользователя", example = "RU")
-    val language: UserLanguage,
+    val lang: UserLanguage,
     @Schema(description = "Роль пользователя в системе", example = "USER")
     val role: UserRole,
 )

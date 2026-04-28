@@ -19,6 +19,8 @@ interface ExcursionService {
 
     fun getExcursionDetail(id: Long): ExcursionDetailResponse
 
+    fun getUserCustomExcursions(): ExcursionListResponse
+
     fun createCustomExcursion(request: CreateCustomExcursionRequest): ExcursionDetailResponse
 
     fun updateCustomExcursion(
@@ -32,6 +34,8 @@ interface ExcursionService {
     ): ExcursionDetailResponse
 
     fun deleteCustomExcursion(id: Long)
+
+    fun getUserFavoriteExcursions(): ExcursionListResponse
 
     fun favoriteExcursion(excursionId: Long)
 

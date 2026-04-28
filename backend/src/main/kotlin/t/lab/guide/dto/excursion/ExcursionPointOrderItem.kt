@@ -11,9 +11,9 @@ data class ExcursionPointOrderItem(
     val pointId: Long,
     @Schema(
         description = "Порядковый номер точки в маршруте (начиная с 0, без пропусков и дубликатов)",
-        example = "0",
+        example = "1",
     )
-    @NotNull(message = "поле обязательно!")
-    @field:Min(0)
+    @field:NotNull(message = "поле обязательно!")
+    @field:Min(1)
     val order: Int,
 )

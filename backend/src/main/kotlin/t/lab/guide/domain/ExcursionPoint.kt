@@ -13,5 +13,5 @@ data class ExcursionPoint(
     val excursion: AggregateReference<Excursion, Long>? = null,
     @Column("point_id")
     val point: AggregateReference<Point, Long>? = null,
-    val orderIndex: Int = 0,
+    val orderIndex: Int,
 )

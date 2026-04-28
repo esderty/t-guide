@@ -9,20 +9,20 @@ data class AdminCreateCategoryRequest(
     @Schema(
         description = "Отображаемое имя категории",
         requiredMode = Schema.RequiredMode.REQUIRED,
-        maxLength = 100,
+        maxLength = 50,
         example = "Ресторан",
     )
-    @field:NotBlank
-    @field:Size(max = 100)
+    @field:NotBlank(message = "Название категории обязательно")
+    @field:Size(max = 50, message = "Название категории не может превышать 50 символов")
     val name: String,
     @Schema(
         description = "Уникальный человекочитаемый идентификатор категории для URL",
         requiredMode = Schema.RequiredMode.REQUIRED,
-        maxLength = 100,
+        maxLength = 50,
         example = "restaurant",
     )
-    @field:NotBlank
-    @field:Size(max = 100)
+    @field:NotBlank(message = "Slug категории обязателен")
+    @field:Size(max = 50, message = "Slug категории не может превышать 50 символов")
     @field:Pattern(
         regexp = "^[a-z0-9]+(?:-[a-z0-9]+)*$",
         message = "slug должен состоять из строчных латинских букв, цифр и дефисов",

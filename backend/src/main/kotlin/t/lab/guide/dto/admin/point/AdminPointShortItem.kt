@@ -13,8 +13,8 @@ data class AdminPointShortItem(
     val categoryId: Long,
     @Schema(description = "Название категории", example = "Достопримечательности")
     val categoryName: String,
-    @Schema(description = "Среднее время посещения точки в минутах", example = "60")
-    val visitTime: Int,
+    @Schema(description = "Среднее время посещения точки в минутах", example = "60", nullable = true)
+    val visitTime: Int? = null,
     @Schema(description = "Активна ли точка(показывается пользователям)")
     val isActive: Boolean,
     @Schema(description = "Дата и время создания точки интереса", example = "2024-01-01T12:00:00Z")

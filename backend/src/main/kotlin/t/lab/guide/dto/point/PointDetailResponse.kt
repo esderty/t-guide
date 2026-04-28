@@ -9,20 +9,26 @@ data class PointDetailResponse(
     val id: Long,
     @Schema(description = "Название точки интереса", example = "Красная площадь")
     val title: String,
-    @Schema(description = "Подробное описание точки интереса", example = "Красная площадь — главная площадь Москвы.")
-    val description: String,
+    @Schema(
+        description = "Подробное описание точки интереса",
+        example = "Красная площадь — главная площадь Москвы.",
+        nullable = true,
+    )
+    val description: String? = null,
+    @Schema(description = "Краткое описание точки интереса", example = "Главная площадь Москвы", nullable = true)
+    val shortDescription: String? = null,
     @Schema(description = "Идентификатор категории, к которой относится точка", example = "1")
     val categoryId: Long,
     @Schema(description = "Название категории", example = "Достопримечательности")
     val categoryName: String,
-    @Schema(description = "Адрес точки интереса", example = "Москва, Красная площадь, 1")
-    val address: String,
+    @Schema(description = "Адрес точки интереса", example = "Москва, Красная площадь, 1", nullable = true)
+    val address: String? = null,
     @Schema(description = "Координаты точки")
     val coordinates: GeoPoint,
-    @Schema(description = "Среднее время посещения точки интереса в минутах", example = "30")
-    val visitTime: Int,
-    @Schema(description = "Часы работы точки", example = "10:00 - 18:00")
-    val workingHours: String,
+    @Schema(description = "Среднее время посещения точки интереса в минутах", example = "30", nullable = true)
+    val visitTime: Int? = null,
+    @Schema(description = "Часы работы точки", example = "10:00 - 18:00", nullable = true)
+    val workingHours: String? = null,
     @Schema(description = "Список медиа-материалов, связанных с точкой интереса")
     val media: List<PointMediaItem>,
 )

@@ -10,18 +10,18 @@ data class AdminPatchCategoryRequest(
     @Schema(
         description = "Новое отображаемое имя категории",
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-        maxLength = 100,
+        maxLength = 50,
         example = "Ресторан",
     )
-    @field:Size(max = 100)
+    @field:Size(max = 50, message = "Название категории не может превышать 50 символов")
     val name: String? = null,
     @Schema(
         description = "Новый человекочитаемый идентификатор категории для URL",
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-        maxLength = 100,
+        maxLength = 50,
         example = "restaurant",
     )
-    @field:Size(max = 100)
+    @field:Size(max = 50, message = "Slug категории не может превышать 50 символов")
     @field:Pattern(
         regexp = "^[a-z0-9]+(?:-[a-z0-9]+)*$",
         message = "slug должен состоять из строчных латинских букв, цифр и дефисов",

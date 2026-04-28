@@ -24,16 +24,24 @@ data class UpdateCustomExcursionRequest(
     @Schema(
         description = "Новое описание экскурсии",
         example = "Обновлённое описание маршрута",
-        maxLength = 2000,
+        maxLength = 5000,
         nullable = true,
     )
-    @field:Size(max = 2000, message = "максимальная длина описания - 2000 символов!")
+    @field:Size(max = 5000, message = "максимальная длина описания - 5000 символов!")
     val description: String? = null,
+    @Schema(
+        description = "Новое краткое описание экскурсии",
+        example = "Обновлённое краткое описание маршрута",
+        maxLength = 255,
+        nullable = true,
+    )
+    @field:Size(max = 255, message = "максимальная длина краткого описания 255 символов")
+    val shortDescription: String? = null,
     @Schema(description = "Новая видимость экскурсии (PUBLIC, PRIVATE)", example = "PUBLIC", nullable = true)
     val visibility: ExcursionVisibility? = null,
 ) {
     @AssertTrue(message = "Хотя бы одно поле должно быть заполнено для обновления")
     @JsonIgnore
     @Schema(hidden = true)
-    fun isAnyFieldPresent(): Boolean = title != null || description != null || visibility != null
+    fun isAnyFieldPresent(): Boolean = title != null || description != null || visibility != null || shortDescription != null
 }

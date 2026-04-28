@@ -22,11 +22,11 @@ data class PatchUserRequest(
     @Schema(
         description = "Новый адрес электронной почты",
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-        maxLength = 50,
+        maxLength = 254,
         example = "mail@domain.zone",
     )
     @field:Email(message = "Некорректный формат email")
-    @field:Size(max = 50, message = "Email не должен превышать 50 символов")
+    @field:Size(max = 254, message = "Email не должен превышать 254 символов")
     val email: String? = null,
     @Schema(
         description = "Новое отображаемое имя пользователя",
@@ -41,10 +41,10 @@ data class PatchUserRequest(
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
         example = "RU",
     )
-    val language: UserLanguage? = null,
+    val lang: UserLanguage? = null,
 ) {
     @AssertTrue(message = "Хотя бы одно поле должно быть заполнено для обновления")
     @JsonIgnore
     @Schema(hidden = true)
-    fun isAnyFieldPresent(): Boolean = username != null || email != null || name != null || language != null
+    fun isAnyFieldPresent(): Boolean = username != null || email != null || name != null || lang != null
 }

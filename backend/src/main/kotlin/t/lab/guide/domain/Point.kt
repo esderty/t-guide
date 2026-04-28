@@ -14,15 +14,15 @@ data class Point(
     val id: Long? = null,
     @Column("category_id")
     val category: AggregateReference<PointCategory, Long>? = null,
-    val title: String = "",
+    val title: String,
     val description: String? = null,
+    val shortDescription: String? = null,
     val address: String? = null,
-    val latitude: Double = 0.0,
-    val longitude: Double = 0.0,
-    val geom: Any? = null,
+    val latitude: Double,
+    val longitude: Double,
     val visitTimeMin: Int? = null,
     val workingHours: String? = null,
-    val isActive: Boolean = false,
+    val isActive: Boolean,
     @CreatedDate
     val createdAt: OffsetDateTime? = null,
     @LastModifiedDate

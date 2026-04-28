@@ -21,11 +21,11 @@ data class RegistrationRequest(
     @Schema(
         description = "Электронная почта пользователя",
         requiredMode = Schema.RequiredMode.REQUIRED,
-        maxLength = 50,
+        maxLength = 254,
         example = "email@domain.zone",
     )
     @field:Email(message = "неверный формат email")
-    @field:Size(max = 50, message = "макс. длина 50 символов")
+    @field:Size(max = 254, message = "макс. длина 254 символов")
     val email: String,
     @Schema(
         description = "Имя пользователя",
@@ -53,5 +53,5 @@ data class RegistrationRequest(
         example = "RU",
     )
     @field:NotNull(message = "поле обязательно!")
-    val language: UserLanguage,
+    val lang: UserLanguage,
 )

@@ -40,7 +40,7 @@ class MockPointService : PointService {
         val filtered =
             mock
                 .filter { categorySlugs.isEmpty() || it.categoryId in filterIds }
-                .filter { maxVisitTime == null || it.visitTime <= maxVisitTime }
+                .filter { maxVisitTime == null || (it.visitTime ?: 0) <= maxVisitTime }
         return PointListResponse(filtered)
     }
 
@@ -110,6 +110,7 @@ class MockPointService : PointService {
             id = detail.id,
             title = detail.title,
             description = detail.description,
+            shortDescription = detail.shortDescription,
             categoryId = detail.categoryId,
             categoryName = detail.categoryName,
             address = detail.address,
@@ -133,13 +134,14 @@ class MockPointService : PointService {
             id = newId,
             title = request.title,
             description = request.description,
+            shortDescription = request.shortDescription,
             categoryId = request.categoryId,
             categoryName = categoryName,
             address = request.address,
             coordinates = request.coordinates,
             visitTime = request.visitTime,
             workingHours = request.workingHours,
-            isActive = request.isActive ?: true,
+            isActive = request.isActive,
             media = emptyList(),
             createdAt = now,
             updatedAt = now,
@@ -163,6 +165,7 @@ class MockPointService : PointService {
             id = current.id,
             title = request.title ?: current.title,
             description = request.description ?: current.description,
+            shortDescription = request.shortDescription ?: current.shortDescription,
             categoryId = newCategoryId,
             categoryName = newCategoryName,
             address = request.address ?: current.address,
@@ -219,44 +222,49 @@ class MockPointService : PointService {
         private val mock =
             listOf(
                 PointShortItem(
-                    1L,
-                    "Красная площадь",
-                    1L,
-                    "Достопримечательности",
-                    GeoPoint(BigDecimal("55.753544"), BigDecimal("37.621202")),
-                    60,
+                    id = 1L,
+                    title = "Красная площадь",
+                    shortDescription = "Главная площадь Москвы",
+                    categoryId = 1L,
+                    categoryName = "Достопримечательности",
+                    coordinates = GeoPoint(BigDecimal("55.753544"), BigDecimal("37.621202")),
+                    visitTime = 60,
                 ),
                 PointShortItem(
-                    2L,
-                    "ГУМ",
-                    2L,
-                    "Шопинг",
-                    GeoPoint(BigDecimal("55.754713"), BigDecimal("37.621500")),
-                    90,
+                    id = 2L,
+                    title = "ГУМ",
+                    shortDescription = "Главный универсальный магазин",
+                    categoryId = 2L,
+                    categoryName = "Шопинг",
+                    coordinates = GeoPoint(BigDecimal("55.754713"), BigDecimal("37.621500")),
+                    visitTime = 90,
                 ),
                 PointShortItem(
-                    3L,
-                    "Третьяковская галерея",
-                    3L,
-                    "Музеи",
-                    GeoPoint(BigDecimal("55.741426"), BigDecimal("37.620137")),
-                    120,
+                    id = 3L,
+                    title = "Третьяковская галерея",
+                    shortDescription = "Крупнейшее собрание русского искусства",
+                    categoryId = 3L,
+                    categoryName = "Музеи",
+                    coordinates = GeoPoint(BigDecimal("55.741426"), BigDecimal("37.620137")),
+                    visitTime = 120,
                 ),
                 PointShortItem(
-                    4L,
-                    "Парк Горького",
-                    4L,
-                    "Парки",
-                    GeoPoint(BigDecimal("55.729812"), BigDecimal("37.601348")),
-                    150,
+                    id = 4L,
+                    title = "Парк Горького",
+                    shortDescription = "Центральный парк культуры и отдыха",
+                    categoryId = 4L,
+                    categoryName = "Парки",
+                    coordinates = GeoPoint(BigDecimal("55.729812"), BigDecimal("37.601348")),
+                    visitTime = 150,
                 ),
                 PointShortItem(
-                    5L,
-                    "Кафе Пушкинъ",
-                    5L,
-                    "Еда",
-                    GeoPoint(BigDecimal("55.764804"), BigDecimal("37.604392")),
-                    90,
+                    id = 5L,
+                    title = "Кафе Пушкинъ",
+                    shortDescription = "Ресторан русской кухни в стиле XIX века",
+                    categoryId = 5L,
+                    categoryName = "Еда",
+                    coordinates = GeoPoint(BigDecimal("55.764804"), BigDecimal("37.604392")),
+                    visitTime = 90,
                 ),
             )
 
@@ -268,6 +276,7 @@ class MockPointService : PointService {
                     description =
                         "Главная площадь Москвы, расположенная в самом центре города между " +
                             "Московским Кремлём и Китай-городом. Включена в список Всемирного наследия ЮНЕСКО.",
+                    shortDescription = "Главная площадь Москвы",
                     categoryId = 1L,
                     categoryName = "Достопримечательности",
                     address = "Москва, Красная площадь",
@@ -287,6 +296,7 @@ class MockPointService : PointService {
                     description =
                         "Главный универсальный магазин — крупнейший торговый комплекс Москвы, " +
                             "расположенный на Красной площади. Памятник архитектуры псевдорусского стиля.",
+                    shortDescription = "Главный универсальный магазин",
                     categoryId = 2L,
                     categoryName = "Шопинг",
                     address = "Москва, Красная площадь, 3",
@@ -305,6 +315,7 @@ class MockPointService : PointService {
                     description =
                         "Художественный музей в Москве, основанный в 1856 году купцом Павлом Третьяковым. " +
                             "Имеет одну из самых крупных в мире коллекций русского изобразительного искусства.",
+                    shortDescription = "Крупнейшее собрание русского искусства",
                     categoryId = 3L,
                     categoryName = "Музеи",
                     address = "Москва, Лаврушинский переулок, 10",
@@ -324,6 +335,7 @@ class MockPointService : PointService {
                     description =
                         "Центральный парк культуры и отдыха в Москве. Современное городское пространство " +
                             "с набережной, велодорожками, кафе и лекториями.",
+                    shortDescription = "Центральный парк культуры и отдыха",
                     categoryId = 4L,
                     categoryName = "Парки",
                     address = "Москва, ул. Крымский Вал, 9",
@@ -343,6 +355,7 @@ class MockPointService : PointService {
                     description =
                         "Знаменитый московский ресторан русской кухни в стиле дворянской усадьбы XIX века. " +
                             "Расположен на Тверском бульваре.",
+                    shortDescription = "Ресторан русской кухни в стиле XIX века",
                     categoryId = 5L,
                     categoryName = "Еда",
                     address = "Москва, Тверской бульвар, 26А",

@@ -21,7 +21,7 @@ data class ExcursionSearchRequest(
         description = "Радиус поиска экскурсий в километрах",
         requiredMode = Schema.RequiredMode.REQUIRED,
         minimum = "1",
-        maximum = "5",
+        maximum = "15",
         example = "1",
     )
     @field:NotNull(message = "поле обязательно!")
@@ -36,7 +36,7 @@ data class ExcursionSearchRequest(
                 requiredMode = Schema.RequiredMode.NOT_REQUIRED,
             ),
     )
-    val categoryIds: List<Long>,
+    val categoryIds: List<Long> = emptyList(),
     @Schema(
         description = "Желаемое время экскурсии в минутах. Используется для подбора маршрута по времени",
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
@@ -44,5 +44,5 @@ data class ExcursionSearchRequest(
         example = "60",
     )
     @field:Min(value = 1, message = "время посещения должно быть положительным!")
-    val visitTime: Int,
+    val visitTime: Int? = null,
 )

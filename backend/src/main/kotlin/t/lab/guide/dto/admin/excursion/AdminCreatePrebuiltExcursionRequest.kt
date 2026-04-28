@@ -22,19 +22,26 @@ data class AdminCreatePrebuiltExcursionRequest(
     val title: String,
     @Schema(
         description = "Подробное описание экскурсии",
-        requiredMode = Schema.RequiredMode.REQUIRED,
-        maxLength = 2000,
+        requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+        maxLength = 5000,
         example = "Прогулка по главным достопримечательностям центра столицы: Красная площадь, ГУМ, Кремль.",
     )
-    @field:NotBlank(message = "поле обязательно!")
-    @field:Size(max = 2000, message = "максимальная длина описания - 2000 символов!")
-    val description: String,
+    @field:Size(max = 5000, message = "максимальная длина описания 5000 символов")
+    val description: String? = null,
+    @Schema(
+        description = "Краткое описание экскурсии для отображения в списках",
+        requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+        maxLength = 255,
+        example = "Прогулка по центру Москвы с посещением главных достопримечательностей.",
+    )
+    @field:Size(max = 255, message = "максимальная длина краткого описания 255 символов")
+    val shortDescription: String? = null,
     @Schema(
         description = "Видимость экскурсии (PUBLIC, PRIVATE). По умолчанию PUBLIC",
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
         example = "PUBLIC",
     )
-    val visibility: ExcursionVisibility? = null,
+    val visibility: ExcursionVisibility = ExcursionVisibility.PUBLIC,
     @ArraySchema(
         schema = Schema(implementation = ExcursionPointOrderItem::class),
         arraySchema =

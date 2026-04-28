@@ -21,7 +21,7 @@ data class PointSearchRequest(
         description = "Радиус поиска точек в километрах",
         requiredMode = Schema.RequiredMode.REQUIRED,
         minimum = "1",
-        maximum = "5",
+        maximum = "15",
         example = "1",
     )
     @field:NotNull(message = "поле обязательно!")

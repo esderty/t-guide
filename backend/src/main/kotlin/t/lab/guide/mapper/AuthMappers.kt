@@ -36,7 +36,7 @@ fun RegistrationRequest.toUser(): User =
         username = username,
         name = name,
         email = email,
-        lang = language,
+        lang = lang,
         role = UserRole.USER,
         isActive = true,
     )

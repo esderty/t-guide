@@ -88,6 +88,28 @@ class ExcursionController(
     }
 
     @Operation(
+        summary = "Получить пользовательские экскурсии",
+        description = "Возвращает список экскурсий, созданных текущим пользователем.",
+        security = [SecurityRequirement(name = "bearerAuth")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Экскурсии успешно получены",
+                content = [Content(schema = Schema(implementation = ExcursionListResponse::class))],
+            ),
+            ApiResponse(
+                responseCode = "401",
+                description = "Пользователь не авторизован",
+                content = [Content(schema = Schema(implementation = ApiErrorResponse::class))],
+            ),
+        ],
+    )
+    @GetMapping("/my")
+    fun getUserCustomExcursions(): ResponseEntity<ExcursionListResponse> = ResponseEntity.ok(excursionService.getUserCustomExcursions())
+
+    @Operation(
         summary = "Создать кастомную экскурсию",
         description = "Создаёт пользовательскую экскурсию. Доступно только авторизованным пользователям.",
         security = [SecurityRequirement(name = "bearerAuth")],
@@ -240,6 +262,28 @@ class ExcursionController(
         excursionService.deleteCustomExcursion(excursionId)
         return ResponseEntity.noContent().build()
     }
+
+    @Operation(
+        summary = "Получить избранные экскурсии",
+        description = "Возвращает список экскурсий, добавленных в избранное текущим пользователем.",
+        security = [SecurityRequirement(name = "bearerAuth")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Избранные экскурсии успешно получены",
+                content = [Content(schema = Schema(implementation = ExcursionListResponse::class))],
+            ),
+            ApiResponse(
+                responseCode = "401",
+                description = "Пользователь не авторизован",
+                content = [Content(schema = Schema(implementation = ApiErrorResponse::class))],
+            ),
+        ],
+    )
+    @GetMapping("/favorites")
+    fun getFavorites(): ResponseEntity<ExcursionListResponse> = ResponseEntity.ok(excursionService.getUserFavoriteExcursions())
 
     @Operation(
         summary = "Добавить в избранное",

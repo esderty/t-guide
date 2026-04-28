@@ -12,13 +12,13 @@ data class AdminUploadPointMediaRequest(
         requiredMode = Schema.RequiredMode.REQUIRED,
         example = "PHOTO",
     )
-    @field:NotNull
+    @field:NotNull(message = "поле обязательно")
     val type: MediaType,
     @Schema(
         description = "Порядковый номер для сортировки (0 = первым в списке)",
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
         example = "0",
     )
-    @field:Min(0)
+    @field:Min(0, message = "значение должно быть неотрицательным")
     val sortOrder: Int? = null,
 )

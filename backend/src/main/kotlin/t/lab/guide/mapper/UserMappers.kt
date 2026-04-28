@@ -11,7 +11,7 @@ fun User.toUserResponse(): UserResponse =
         username = username,
         name = name,
         email = email,
-        language = lang,
+        lang = lang,
         role = role,
     )
 
@@ -21,7 +21,7 @@ fun ProfileUserView.toUserResponse(): UserResponse =
         username = username,
         name = name,
         email = email,
-        language = lang,
+        lang = lang,
         role = role,
     )
 

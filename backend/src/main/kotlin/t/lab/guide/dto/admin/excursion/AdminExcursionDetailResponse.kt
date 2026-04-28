@@ -29,7 +29,13 @@ data class AdminExcursionDetailResponse(
         example = "Прогулка по главным достопримечательностям центра столицы: Красная площадь, ГУМ, Кремль.",
         nullable = true,
     )
-    val description: String?,
+    val description: String? = null,
+    @Schema(
+        description = "Краткое описание экскурсии",
+        example = "Прогулка по центру Москвы с посещением главных достопримечательностей.",
+        nullable = true,
+    )
+    val shortDescription: String? = null,
     @Schema(description = "Протяжённость маршрута в метрах", example = "3200")
     val distance: Int,
     @Schema(description = "Продолжительность экскурсии в минутах", example = "120")
@@ -41,8 +47,12 @@ data class AdminExcursionDetailResponse(
         schema = Schema(implementation = AdminPointShortItem::class),
     )
     val points: List<AdminPointShortItem>,
-    @Schema(description = "Идентификатор пользователя, создавшего экскурсию", example = "42")
-    val createdBy: Long,
+    @Schema(
+        description = "Идентификатор пользователя, создавшего экскурсию",
+        example = "42",
+        nullable = true,
+    )
+    val createdBy: Long? = null,
     @Schema(description = "Дата и время создания экскурсии", example = "2024-01-01T12:00:00Z")
     val createdAt: OffsetDateTime,
     @Schema(description = "Дата и время последнего обновления экскурсии", example = "2024-01-15T12:00:00Z")

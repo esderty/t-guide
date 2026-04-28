@@ -28,7 +28,7 @@ class MockAuthService(
                 username = request.username,
                 email = request.email,
                 name = request.name,
-                language = request.language,
+                lang = request.lang,
                 role = UserRole.USER,
             )
         return RegistrationResponse(tokens = mockTokens(), user = user)
@@ -41,7 +41,7 @@ class MockAuthService(
                 username = "enzolu",
                 email = "email@domain.zone",
                 name = "Игорь",
-                language = UserLanguage.RU,
+                lang = UserLanguage.RU,
                 role = UserRole.USER,
             )
         return AuthResponse(tokens = mockTokens(), user = user)
