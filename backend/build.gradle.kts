@@ -1,8 +1,9 @@
 plugins {
-    kotlin("jvm") version "2.2.21"
-    kotlin("plugin.spring") version "2.2.21"
-    id("org.springframework.boot") version "4.0.4"
-    id("io.spring.dependency-management") version "1.1.7"
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.spring)
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.ktlint)
 }
 
 group = "t.lab"
@@ -20,33 +21,66 @@ repositories {
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
-    implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation("org.springframework.security:spring-security-oauth2-jose")
-    implementation("org.springframework.boot:spring-boot-starter-webmvc")
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("org.springframework.boot:spring-boot-starter-flyway")
-    implementation("org.flywaydb:flyway-database-postgresql")
-    implementation("org.springframework.boot:spring-boot-starter-data-redis")
-    implementation("org.bouncycastle:bcprov-jdk18on:1.84")
-    developmentOnly("org.springframework.boot:spring-boot-devtools")
-    runtimeOnly("org.postgresql:postgresql")
-    testImplementation("org.springframework.boot:spring-boot-starter-data-jdbc-test")
-    testImplementation("org.springframework.boot:spring-boot-starter-jdbc-test")
-    testImplementation("org.springframework.boot:spring-boot-starter-security-test")
-    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    implementation(platform(libs.spring.boot.dependencies))
+    implementation(libs.spring.boot.starter.data.jdbc)
+    implementation(libs.spring.boot.starter.security)
+    implementation(libs.spring.security.oauth2.jose)
+    implementation(libs.spring.boot.starter.webmvc)
+    implementation(libs.springdoc.openapi.starter.webmvc.ui)
+    implementation(libs.kotlin.reflect)
+    implementation(libs.spring.boot.starter.actuator)
+    implementation(libs.spring.boot.starter.flyway)
+    implementation(libs.flyway.database.postgresql)
+    implementation(libs.spring.boot.starter.data.redis)
+    implementation(libs.bcprov.jdk18on)
+
+    developmentOnly(libs.spring.boot.devtools)
+
+    runtimeOnly(libs.postgresql)
+
+    testImplementation(libs.spring.boot.starter.data.jdbc.test)
+    testImplementation(libs.spring.boot.starter.jdbc.test)
+    testImplementation(libs.spring.boot.starter.security.test)
+    testImplementation(libs.spring.boot.starter.webmvc.test)
+    testImplementation(libs.kotlin.test.junit5)
+
+    testRuntimeOnly(libs.junit.launcher)
 }
 
 kotlin {
     compilerOptions {
-        freeCompilerArgs.addAll("-Xjsr305=strict", "-Xannotation-default-target=param-property")
+        freeCompilerArgs.addAll(
+            "-Xjsr305=strict",
+            "-Xannotation-default-target=param-property",
+        )
     }
 }
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+detekt {
+    toolVersion = libs.versions.detekt.get()
+    config.setFrom(files("$rootDir/config/detekt/detekt.yml"))
+    buildUponDefaultConfig = true
+    parallel = true
+    autoCorrect = false
+}
+
+ktlint {
+    version.set("1.8.0")
+    android.set(false)
+    ignoreFailures.set(false)
+
+    reporters {
+        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.PLAIN)
+        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.CHECKSTYLE)
+        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.SARIF)
+    }
+
+    filter {
+        exclude("**/generated/**")
+        exclude("**/build/**")
+    }
 }

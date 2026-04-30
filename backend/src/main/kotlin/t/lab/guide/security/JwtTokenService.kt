@@ -55,9 +55,9 @@ class JwtTokenService(
 
         val view =
             userRepository.findLoginViewByUserId(session.userId)
-                ?: throw BadCredentialsException("User not found for refresh token")
+                ?: throw BadCredentialsException("Invalid refresh token")
 
-        if (!view.isActive) throw BadCredentialsException("User is not active")
+        if (!view.isActive) throw BadCredentialsException("Invalid refresh token")
 
         val userDetails = view.toAppUserDetails()
 

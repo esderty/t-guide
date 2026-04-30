@@ -5,9 +5,8 @@ import org.springframework.boot.test.context.SpringBootTest
 
 @SpringBootTest
 class GuideApplicationTests {
-
-	@Test
-	fun contextLoads() {
-	}
-
+    @Test
+    @Suppress("EmptyFunctionBlock")
+    fun contextLoads() {
+    }
 }

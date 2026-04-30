@@ -1,0 +1,69 @@
+root = true
+
+# ============ Базовое для всех файлов ============
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# ============ Kotlin и Kotlin Script ============
+[*.{kt,kts}]
+indent_size = 4
+max_line_length = 160
+ij_kotlin_imports_layout = *,java.**,javax.**,kotlin.**,^
+ij_kotlin_allow_trailing_comma = true
+ij_kotlin_allow_trailing_comma_on_call_site = true
+
+# ---------- ktlint: какие наборы правил активны ----------
+ktlint_standard = enabled
+ktlint_experimental = disabled
+
+# ---------- Базовые правила ктлинта ----------
+ktlint_standard_no-wildcard-imports = enabled
+ktlint_standard_no-unused-imports = enabled
+ktlint_standard_filename = enabled
+ktlint_standard_package-name = enabled
+ktlint_standard_property-naming = enabled
+ktlint_standard_class-naming = enabled
+ktlint_standard_max-line-length = enabled
+ktlint_standard_final-newline = enabled
+ktlint_standard_no-trailing-spaces = enabled
+ktlint_standard_no-blank-line-before-rbrace = enabled
+ktlint_standard_no-multi-spaces = enabled
+ktlint_standard_no-empty-class-body = enabled
+ktlint_standard_string-template = enabled
+ktlint_standard_modifier-order = enabled
+
+# ---------- Что часто отключают в Spring проектах ----------
+# Длинные сигнатуры @Bean методов и контроллеров
+ktlint_standard_function-signature = disabled
+ktlint_standard_function-expression-body = disabled
+
+# Конфигурации с многострочными аннотациями (@RequestMapping, @Operation)
+ktlint_standard_annotation = disabled
+
+# В data class и DTO бывает удобно держать аргументы на одной линии
+ktlint_standard_parameter-list-wrapping = enabled
+
+# Trailing comma — современный стандарт Kotlin
+ktlint_standard_trailing-comma-on-call-site = enabled
+ktlint_standard_trailing-comma-on-declaration-site = enabled
+
+# ============ Тестовые файлы ============
+[**/test/**.{kt,kts}]
+# Разрешаем `fun \`should return X when Y\`()` стиль
+ktlint_standard_function-naming = disabled
+# Длинные имена тест-функций часто превышают лимит
+max_line_length = unset
+# В тестах wildcards импортов иногда полезны (org.assertj.core.api.Assertions.*)
+ktlint_standard_no-wildcard-imports = disabled
+
+# ============ Сгенерированный код ============
+[**/generated/**]
+ktlint = disabled
+
+[**/build/**]
+ktlint = disabled
