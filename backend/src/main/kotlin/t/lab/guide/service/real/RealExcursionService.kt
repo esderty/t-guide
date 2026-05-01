@@ -28,6 +28,10 @@ class RealExcursionService : ExcursionService {
         TODO("Not yet implemented")
     }
 
+    override fun getUserCustomExcursions(): ExcursionListResponse {
+        TODO("Not yet implemented")
+    }
+
     override fun createCustomExcursion(request: CreateCustomExcursionRequest): ExcursionDetailResponse {
         TODO("Not yet implemented")
     }
@@ -47,6 +51,10 @@ class RealExcursionService : ExcursionService {
     }
 
     override fun deleteCustomExcursion(id: Long) {
+        TODO("Not yet implemented")
+    }
+
+    override fun getUserFavoriteExcursions(): ExcursionListResponse {
         TODO("Not yet implemented")
     }
 
