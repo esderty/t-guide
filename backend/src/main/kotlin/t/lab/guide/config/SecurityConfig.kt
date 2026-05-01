@@ -24,6 +24,7 @@ import t.lab.guide.properties.CorsProperties
 import t.lab.guide.properties.JwtProperties
 import t.lab.guide.security.JwtAuthenticationFilter
 import tools.jackson.databind.ObjectMapper
+import java.time.Duration
 import java.time.OffsetDateTime
 
 @Configuration
@@ -108,7 +109,7 @@ class SecurityConfig {
                 allowedHeaders = listOf("Authorization", "Content-Type", "X-XSRF-TOKEN")
                 exposedHeaders = listOf("Authorization")
                 allowCredentials = true
-                maxAge = 3600
+                maxAge = Duration.ofHours(1).seconds
             }
 
         return UrlBasedCorsConfigurationSource().apply {

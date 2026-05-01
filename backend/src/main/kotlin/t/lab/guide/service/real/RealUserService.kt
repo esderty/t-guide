@@ -13,6 +13,7 @@ import t.lab.guide.dto.user.PatchUserRequest
 import t.lab.guide.dto.user.UserResponse
 import t.lab.guide.enums.AdminUserSortField
 import t.lab.guide.enums.SortDirection
+import t.lab.guide.enums.UserLanguage
 import t.lab.guide.exception.InternalServerException
 import t.lab.guide.exception.NotFoundException
 import t.lab.guide.mapper.toAdminUserDetailResponse
@@ -55,7 +56,7 @@ class RealUserService(
                 email = request.email ?: currentUser.email,
                 username = request.username ?: currentUser.username,
                 name = request.name ?: currentUser.name,
-                lang = request.lang ?: currentUser.lang,
+                lang = request.lang?.let(UserLanguage::valueOf) ?: currentUser.lang,
             )
 
         return userRepository.save(updatedUser).toUserResponse()
@@ -109,7 +110,7 @@ class RealUserService(
             currentUser.copy(
                 email = request.email ?: currentUser.email,
                 username = request.username ?: currentUser.username,
-                lang = request.lang ?: currentUser.lang,
+                lang = request.lang?.let(UserLanguage::valueOf) ?: currentUser.lang,
                 role = request.role ?: currentUser.role,
                 isActive = request.isActive ?: currentUser.isActive,
             )

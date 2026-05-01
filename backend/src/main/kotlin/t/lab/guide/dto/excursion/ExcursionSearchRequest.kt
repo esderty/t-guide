@@ -13,21 +13,23 @@ data class ExcursionSearchRequest(
     @Schema(
         description = "Местоположение пользователя",
         requiredMode = Schema.RequiredMode.REQUIRED,
+        nullable = false,
     )
     @field:Valid
     @field:NotNull(message = "поле обязательно!")
-    val location: GeoPoint,
+    val location: GeoPoint? = null,
     @Schema(
         description = "Радиус поиска экскурсий в километрах",
         requiredMode = Schema.RequiredMode.REQUIRED,
         minimum = "1",
         maximum = "15",
         example = "1",
+        nullable = false,
     )
     @field:NotNull(message = "поле обязательно!")
     @field:Min(value = 1, message = "радиус должен быть не меньше 1 километра!")
     @field:Max(value = 15, message = "радиус должен быть не больше 15 километров!")
-    val radiusKilometers: Int,
+    val radiusKilometers: Int? = null,
     @ArraySchema(
         schema = Schema(description = "Идентификатор категории экскурсий", example = "1"),
         arraySchema =

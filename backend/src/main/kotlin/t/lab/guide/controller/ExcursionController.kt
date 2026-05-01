@@ -27,6 +27,7 @@ import t.lab.guide.dto.excursion.ExcursionSearchRequest
 import t.lab.guide.dto.excursion.ExcursionShortItem
 import t.lab.guide.dto.excursion.SetExcursionPointsRequest
 import t.lab.guide.dto.excursion.UpdateCustomExcursionRequest
+import t.lab.guide.dto.excursion.command.toCommand
 import t.lab.guide.service.ExcursionService
 
 @Tag(name = "Excursions", description = "Операции с экскурсиями")
@@ -57,7 +58,7 @@ class ExcursionController(
     fun searchExcursions(
         @Valid @RequestBody request: ExcursionSearchRequest,
     ): ResponseEntity<ExcursionListResponse> {
-        val response: ExcursionListResponse = excursionService.searchExcursions(request)
+        val response: ExcursionListResponse = excursionService.searchExcursions(request.toCommand())
         return ResponseEntity.ok(response)
     }
 
@@ -107,7 +108,8 @@ class ExcursionController(
         ],
     )
     @GetMapping("/my")
-    fun getUserCustomExcursions(): ResponseEntity<ExcursionListResponse> = ResponseEntity.ok(excursionService.getUserCustomExcursions())
+    fun getUserCustomExcursions(): ResponseEntity<ExcursionListResponse> =
+        ResponseEntity.ok(excursionService.getUserCustomExcursions())
 
     @Operation(
         summary = "Создать кастомную экскурсию",
@@ -137,13 +139,13 @@ class ExcursionController(
     fun createCustomExcursion(
         @Valid @RequestBody request: CreateCustomExcursionRequest,
     ): ResponseEntity<ExcursionDetailResponse> {
-        val response: ExcursionDetailResponse = excursionService.createCustomExcursion(request)
+        val response: ExcursionDetailResponse = excursionService.createCustomExcursion(request.toCommand())
         return ResponseEntity.ok(response)
     }
 
     @Operation(
         summary = "Обновить кастомную экскурсию",
-        description = "Частично обновляет данные пользовательской экскурсии (название, описание, видимость и т.д.). Доступно только владельцу.",
+        description = "Частично обновляет данные пользовательской экскурсии",
         security = [SecurityRequirement(name = "bearerAuth")],
     )
     @ApiResponses(
@@ -223,7 +225,7 @@ class ExcursionController(
         @Parameter(description = "Идентификатор экскурсии", example = "1") @PathVariable excursionId: Long,
         @Valid @RequestBody request: SetExcursionPointsRequest,
     ): ResponseEntity<ExcursionDetailResponse> {
-        val response: ExcursionDetailResponse = excursionService.setExcursionPoints(excursionId, request)
+        val response: ExcursionDetailResponse = excursionService.setExcursionPoints(excursionId, request.toCommand())
         return ResponseEntity.ok(response)
     }
 
@@ -283,7 +285,10 @@ class ExcursionController(
         ],
     )
     @GetMapping("/favorites")
-    fun getFavorites(): ResponseEntity<ExcursionListResponse> = ResponseEntity.ok(excursionService.getUserFavoriteExcursions())
+    fun getFavorites(): ResponseEntity<ExcursionListResponse> =
+        ResponseEntity.ok(
+            excursionService.getUserFavoriteExcursions(),
+        )
 
     @Operation(
         summary = "Добавить в избранное",

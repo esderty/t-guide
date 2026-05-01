@@ -2,10 +2,10 @@ package t.lab.guide.service.mock
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
-import t.lab.guide.dto.admin.category.AdminCreateCategoryRequest
 import t.lab.guide.dto.admin.category.AdminPatchCategoryRequest
-import t.lab.guide.dto.point.category.CategoryItem
-import t.lab.guide.dto.point.category.CategoryListResponse
+import t.lab.guide.dto.admin.category.command.AdminCreateCategoryCommand
+import t.lab.guide.dto.category.CategoryItem
+import t.lab.guide.dto.category.CategoryListResponse
 import t.lab.guide.exception.NotFoundException
 import t.lab.guide.service.PointCategoryService
 
@@ -14,7 +14,7 @@ import t.lab.guide.service.PointCategoryService
 class MockPointCategoryService : PointCategoryService {
     override fun getAllCategories(): CategoryListResponse = CategoryListResponse(categories)
 
-    override fun createCategory(request: AdminCreateCategoryRequest): CategoryItem {
+    override fun createCategory(request: AdminCreateCategoryCommand): CategoryItem {
         val newId = categories.size + 1L
         return CategoryItem(newId, request.name, request.slug)
     }

@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.Size
 import t.lab.guide.enums.ExcursionVisibility
+import t.lab.guide.validation.ValidEnum
 
 @Schema(description = "Данные для сохранения пользовательской экскурсии")
 data class CreateCustomExcursionRequest(
@@ -14,10 +15,11 @@ data class CreateCustomExcursionRequest(
         description = "Название экскурсии",
         requiredMode = Schema.RequiredMode.REQUIRED,
         example = "Моя прогулка по центру",
+        nullable = false,
     )
     @field:NotBlank(message = "поле обязательно!")
     @field:Size(max = 255, message = "название должно быть не длиннее 255 символов!")
-    val title: String,
+    val title: String? = null,
     @Schema(
         description = "Описание экскурсии",
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
@@ -36,18 +38,23 @@ data class CreateCustomExcursionRequest(
         description = "Видимость экскурсии (PUBLIC - доступна всем, PRIVATE - доступна только автору)",
         requiredMode = Schema.RequiredMode.REQUIRED,
         example = "PUBLIC",
+        nullable = false,
     )
-    val visibility: ExcursionVisibility,
+    @field:ValidEnum(
+        enumClass = ExcursionVisibility::class,
+    )
+    val visibility: String? = null,
     @ArraySchema(
         schema = Schema(implementation = ExcursionPointOrderItem::class),
         arraySchema =
             Schema(
                 description = "Точки маршрута с явным порядком прохождения",
                 requiredMode = Schema.RequiredMode.REQUIRED,
+                nullable = false,
             ),
     )
     @field:NotEmpty(message = "поле обязательно!")
     @field:Size(min = 1, max = 25, message = "количество точек должно быть от 1 до 25!")
     @field:Valid
-    val points: List<ExcursionPointOrderItem>,
+    val points: List<ExcursionPointOrderItem>? = null,
 )

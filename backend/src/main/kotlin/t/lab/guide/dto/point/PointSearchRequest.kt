@@ -13,21 +13,23 @@ data class PointSearchRequest(
     @Schema(
         description = "Местоположение пользователя",
         requiredMode = Schema.RequiredMode.REQUIRED,
+        nullable = false,
     )
     @field:Valid
     @field:NotNull(message = "поле обязательно!")
-    val location: GeoPoint,
+    val location: GeoPoint? = null,
     @Schema(
         description = "Радиус поиска точек в километрах",
         requiredMode = Schema.RequiredMode.REQUIRED,
         minimum = "1",
         maximum = "15",
         example = "1",
+        nullable = false,
     )
     @field:NotNull(message = "поле обязательно!")
     @field:Min(value = 1, message = "радиус должен быть не меньше 1 километра!")
     @field:Max(value = 15, message = "радиус должен быть не больше 15 километров!")
-    val radiusKilometers: Int,
+    val radiusKilometers: Int? = null,
     @ArraySchema(
         schema = Schema(description = "Slug категории точки", example = "attraction"),
         arraySchema =
@@ -42,6 +44,7 @@ data class PointSearchRequest(
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
         minimum = "1",
         example = "60",
+        nullable = true,
     )
     @field:Min(value = 1, message = "время посещения должно быть положительным!")
     val visitTime: Int? = null,

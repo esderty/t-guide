@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController
 import t.lab.guide.dto.ApiErrorResponse
 import t.lab.guide.dto.auth.ChangePasswordRequest
 import t.lab.guide.dto.auth.TokenPairResponse
+import t.lab.guide.dto.auth.command.toCommand
 import t.lab.guide.dto.user.PatchUserRequest
 import t.lab.guide.dto.user.UserResponse
 import t.lab.guide.service.AuthService
@@ -120,7 +121,8 @@ class ProfileController(
     fun changePassword(
         @Valid @RequestBody request: ChangePasswordRequest,
     ): ResponseEntity<TokenPairResponse> {
-        val response: TokenPairResponse = authService.changePassword(request)
+        val command = request.toCommand()
+        val response: TokenPairResponse = authService.changePassword(command)
         return ResponseEntity.ok(response)
     }
 }

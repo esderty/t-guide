@@ -28,7 +28,9 @@ import t.lab.guide.dto.admin.excursion.AdminCreatePrebuiltExcursionRequest
 import t.lab.guide.dto.admin.excursion.AdminExcursionDetailResponse
 import t.lab.guide.dto.admin.excursion.AdminExcursionPageResponse
 import t.lab.guide.dto.admin.excursion.AdminPatchPrebuiltExcursionRequest
+import t.lab.guide.dto.admin.excursion.command.toCommand
 import t.lab.guide.dto.excursion.SetExcursionPointsRequest
+import t.lab.guide.dto.excursion.command.toCommand
 import t.lab.guide.enums.AdminExcursionSortField
 import t.lab.guide.enums.SortDirection
 import t.lab.guide.service.ExcursionService
@@ -72,7 +74,10 @@ class AdminExcursionController(
     @GetMapping("/page")
     fun getExcursionsPage(
         @Parameter(description = "Номер страницы (с 0)", example = "0") @RequestParam(defaultValue = "0") @Min(0) page: Int,
-        @Parameter(description = "Размер страницы", example = "25") @RequestParam(defaultValue = "25") @Min(0) @Max(100) size: Int,
+        @Parameter(
+            description = "Размер страницы",
+            example = "25",
+        ) @RequestParam(defaultValue = "25") @Min(0) @Max(100) size: Int,
         @Parameter(
             description = "Поле для сортировки (например, id, title, createdAt)",
             example = "createdAt",
@@ -171,7 +176,7 @@ class AdminExcursionController(
     fun createPrebuiltExcursion(
         @Valid @RequestBody request: AdminCreatePrebuiltExcursionRequest,
     ): ResponseEntity<AdminExcursionDetailResponse> {
-        val response: AdminExcursionDetailResponse = excursionService.createPrebuiltExcursion(request)
+        val response: AdminExcursionDetailResponse = excursionService.createPrebuiltExcursion(request.toCommand())
         return ResponseEntity.ok(response)
     }
 
@@ -264,7 +269,7 @@ class AdminExcursionController(
         @Parameter(description = "Идентификатор экскурсии", example = "1") @PathVariable excursionId: Long,
         @Valid @RequestBody request: SetExcursionPointsRequest,
     ): ResponseEntity<AdminExcursionDetailResponse> {
-        val response: AdminExcursionDetailResponse = excursionService.setAdminExcursionPoints(excursionId, request)
+        val response: AdminExcursionDetailResponse = excursionService.setAdminExcursionPoints(excursionId, request.toCommand())
         return ResponseEntity.ok(response)
     }
 

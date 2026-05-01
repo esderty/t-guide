@@ -19,6 +19,7 @@ data class AdminPatchPointRequest(
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
         maxLength = 255,
         example = "Красная площадь",
+        nullable = true,
     )
     @field:Size(max = 255, message = "максимальная длина названия - 255 символов!")
     val title: String? = null,
@@ -27,6 +28,7 @@ data class AdminPatchPointRequest(
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
         maxLength = 5000,
         example = "Красная площадь — главная площадь Москвы.",
+        nullable = true,
     )
     @field:Size(max = 5000, message = "максимальная длина описания - 5000 символов!")
     val description: String? = null,
@@ -35,6 +37,7 @@ data class AdminPatchPointRequest(
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
         maxLength = 255,
         example = "Главная площадь Москвы",
+        nullable = true,
     )
     @field:Size(max = 255, message = "максимальная длина краткого описания - 255 символов!")
     val shortDescription: String? = null,
@@ -42,6 +45,7 @@ data class AdminPatchPointRequest(
         description = "Новый идентификатор категории",
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
         example = "2",
+        nullable = true,
     )
     val categoryId: Long? = null,
     @Schema(
@@ -49,12 +53,14 @@ data class AdminPatchPointRequest(
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
         maxLength = 255,
         example = "Москва, Красная площадь, 1",
+        nullable = true,
     )
     @field:Size(max = 255, message = "максимальная длина адреса - 255 символов!")
     val address: String? = null,
     @Schema(
         description = "Новые координаты точки",
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+        nullable = true,
     )
     @field:Valid
     val coordinates: GeoPoint? = null,
@@ -62,6 +68,7 @@ data class AdminPatchPointRequest(
         description = "Новое среднее время посещения точки в минутах",
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
         example = "90",
+        nullable = true,
     )
     @field:Min(1, message = "время посещения должно быть положительным числом!")
     val visitTime: Int? = null,
@@ -70,6 +77,7 @@ data class AdminPatchPointRequest(
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
         maxLength = 255,
         example = "10:00 - 22:00",
+        nullable = true,
     )
     @field:Size(max = 255, message = "максимальная длина часов работы - 255 символов!")
     val workingHours: String? = null,
@@ -77,6 +85,7 @@ data class AdminPatchPointRequest(
         description = "Активна ли точка (показывается пользователям)",
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
         example = "true",
+        nullable = true,
     )
     val isActive: Boolean? = null,
 ) {

@@ -1,27 +1,27 @@
 package t.lab.guide.service
 
-import t.lab.guide.dto.admin.excursion.AdminCreatePrebuiltExcursionRequest
 import t.lab.guide.dto.admin.excursion.AdminExcursionDetailResponse
 import t.lab.guide.dto.admin.excursion.AdminExcursionPageResponse
 import t.lab.guide.dto.admin.excursion.AdminPatchPrebuiltExcursionRequest
-import t.lab.guide.dto.excursion.CreateCustomExcursionRequest
+import t.lab.guide.dto.admin.excursion.command.AdminCreatePrebuiltExcursionCommand
 import t.lab.guide.dto.excursion.ExcursionDetailResponse
 import t.lab.guide.dto.excursion.ExcursionListResponse
-import t.lab.guide.dto.excursion.ExcursionSearchRequest
 import t.lab.guide.dto.excursion.ExcursionShortItem
-import t.lab.guide.dto.excursion.SetExcursionPointsRequest
 import t.lab.guide.dto.excursion.UpdateCustomExcursionRequest
+import t.lab.guide.dto.excursion.command.CreateCustomExcursionCommand
+import t.lab.guide.dto.excursion.command.ExcursionSearchCommand
+import t.lab.guide.dto.excursion.command.SetExcursionPointsCommand
 import t.lab.guide.enums.AdminExcursionSortField
 import t.lab.guide.enums.SortDirection
 
 interface ExcursionService {
-    fun searchExcursions(request: ExcursionSearchRequest): ExcursionListResponse
+    fun searchExcursions(request: ExcursionSearchCommand): ExcursionListResponse
 
     fun getExcursionDetail(id: Long): ExcursionDetailResponse
 
     fun getUserCustomExcursions(): ExcursionListResponse
 
-    fun createCustomExcursion(request: CreateCustomExcursionRequest): ExcursionDetailResponse
+    fun createCustomExcursion(request: CreateCustomExcursionCommand): ExcursionDetailResponse
 
     fun updateCustomExcursion(
         id: Long,
@@ -30,7 +30,7 @@ interface ExcursionService {
 
     fun setExcursionPoints(
         id: Long,
-        request: SetExcursionPointsRequest,
+        request: SetExcursionPointsCommand,
     ): ExcursionDetailResponse
 
     fun deleteCustomExcursion(id: Long)
@@ -51,7 +51,7 @@ interface ExcursionService {
 
     fun getAdminExcursionDetail(id: Long): AdminExcursionDetailResponse
 
-    fun createPrebuiltExcursion(request: AdminCreatePrebuiltExcursionRequest): AdminExcursionDetailResponse
+    fun createPrebuiltExcursion(request: AdminCreatePrebuiltExcursionCommand): AdminExcursionDetailResponse
 
     fun patchPrebuiltExcursion(
         id: Long,
@@ -60,7 +60,7 @@ interface ExcursionService {
 
     fun setAdminExcursionPoints(
         id: Long,
-        request: SetExcursionPointsRequest,
+        request: SetExcursionPointsCommand,
     ): AdminExcursionDetailResponse
 
     fun deleteExcursion(id: Long)

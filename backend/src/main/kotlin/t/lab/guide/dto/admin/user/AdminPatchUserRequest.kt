@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.Size
 import t.lab.guide.enums.UserLanguage
 import t.lab.guide.enums.UserRole
+import t.lab.guide.validation.ValidEnum
 
 data class AdminPatchUserRequest(
     @Schema(
@@ -14,6 +15,7 @@ data class AdminPatchUserRequest(
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
         maxLength = 50,
         example = "new_username",
+        nullable = true,
     )
     @field:Size(max = 50, message = "максимальная длина логина - 50 символов!")
     val username: String? = null,
@@ -22,6 +24,7 @@ data class AdminPatchUserRequest(
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
         maxLength = 254,
         example = "mail@domain.zone",
+        nullable = true,
     )
     @field:Email(message = "некорректный формат email")
     @field:Size(max = 254, message = "максимальная длина email - 254 символов!")
@@ -30,18 +33,25 @@ data class AdminPatchUserRequest(
         description = "Новый язык интерфейса пользователя",
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
         example = "RU",
+        nullable = true,
     )
-    val lang: UserLanguage? = null,
+    @field:ValidEnum(
+        enumClass = UserLanguage::class,
+        message = "Не поддерживаемый язык. Допустимые значения: RU, EN",
+    )
+    val lang: String? = null,
     @Schema(
         description = "Новая роль пользователя в системе",
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
         example = "USER",
+        nullable = true,
     )
     val role: UserRole? = null,
     @Schema(
         description = "Активен ли пользователь",
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
         example = "true",
+        nullable = true,
     )
     val isActive: Boolean? = null,
 ) {

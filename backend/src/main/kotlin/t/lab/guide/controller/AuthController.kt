@@ -20,6 +20,7 @@ import t.lab.guide.dto.auth.RefreshRequest
 import t.lab.guide.dto.auth.RegistrationRequest
 import t.lab.guide.dto.auth.RegistrationResponse
 import t.lab.guide.dto.auth.TokenPairResponse
+import t.lab.guide.dto.auth.command.toCommand
 import t.lab.guide.service.AuthService
 
 @Tag(name = "Authentication", description = "Операции аутентификации пользователей")
@@ -55,7 +56,7 @@ class AuthController(
     fun registerUser(
         @Valid @RequestBody request: RegistrationRequest,
     ): ResponseEntity<RegistrationResponse> {
-        val response: RegistrationResponse = authService.registerUser(request)
+        val response: RegistrationResponse = authService.registerUser(request.toCommand())
         return ResponseEntity.ok(response)
     }
 
@@ -83,7 +84,7 @@ class AuthController(
     fun authenticateUser(
         @Valid @RequestBody request: AuthRequest,
     ): ResponseEntity<AuthResponse> {
-        val response: AuthResponse = authService.authenticateUser(request)
+        val response: AuthResponse = authService.authenticateUser(request.toCommand())
         return ResponseEntity.ok(response)
     }
 
@@ -110,7 +111,7 @@ class AuthController(
     fun logoutUser(
         @Valid @RequestBody request: LogoutRequest,
     ): ResponseEntity<Void> {
-        authService.logoutUser(request)
+        authService.logoutUser(request.toCommand())
         return ResponseEntity.noContent().build()
     }
 
@@ -141,7 +142,7 @@ class AuthController(
     fun refreshUser(
         @Valid @RequestBody request: RefreshRequest,
     ): ResponseEntity<TokenPairResponse> {
-        val response: TokenPairResponse = authService.refreshToken(request)
+        val response: TokenPairResponse = authService.refreshToken(request.toCommand())
         return ResponseEntity.ok(response)
     }
 }

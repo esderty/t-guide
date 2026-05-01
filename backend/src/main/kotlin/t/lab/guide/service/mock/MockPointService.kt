@@ -3,20 +3,21 @@ package t.lab.guide.service.mock
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
-import t.lab.guide.dto.admin.point.AdminCreatePointRequest
 import t.lab.guide.dto.admin.point.AdminPatchPointRequest
 import t.lab.guide.dto.admin.point.AdminPointDetailResponse
 import t.lab.guide.dto.admin.point.AdminPointMediaItem
 import t.lab.guide.dto.admin.point.AdminPointPageResponse
 import t.lab.guide.dto.admin.point.AdminPointShortItem
-import t.lab.guide.dto.admin.point.AdminUploadPointMediaRequest
+import t.lab.guide.dto.admin.point.command.AdminCreatePointCommand
+import t.lab.guide.dto.admin.point.command.AdminUploadPointMediaCommand
+import t.lab.guide.dto.category.CategoryItem
 import t.lab.guide.dto.common.GeoPoint
+import t.lab.guide.dto.common.command.toDto
 import t.lab.guide.dto.point.PointDetailResponse
 import t.lab.guide.dto.point.PointListResponse
 import t.lab.guide.dto.point.PointMediaItem
-import t.lab.guide.dto.point.PointSearchRequest
 import t.lab.guide.dto.point.PointShortItem
-import t.lab.guide.dto.point.category.CategoryItem
+import t.lab.guide.dto.point.command.PointSearchCommand
 import t.lab.guide.enums.AdminPointSortField
 import t.lab.guide.enums.MediaType
 import t.lab.guide.enums.SortDirection
@@ -28,7 +29,7 @@ import java.time.OffsetDateTime
 @Service
 @Profile("demo")
 class MockPointService : PointService {
-    override fun searchPoints(request: PointSearchRequest): PointListResponse {
+    override fun searchPoints(request: PointSearchCommand): PointListResponse {
         val categorySlugs = request.categorySlugs
         val maxVisitTime = request.visitTime
         val filterIds =
@@ -124,7 +125,7 @@ class MockPointService : PointService {
         )
     }
 
-    override fun createPoint(request: AdminCreatePointRequest): AdminPointDetailResponse {
+    override fun createPoint(request: AdminCreatePointCommand): AdminPointDetailResponse {
         val newId = mock.size + 1L
         val categoryName =
             categories.firstOrNull { it.id == request.categoryId }?.name
@@ -138,7 +139,7 @@ class MockPointService : PointService {
             categoryId = request.categoryId,
             categoryName = categoryName,
             address = request.address,
-            coordinates = request.coordinates,
+            coordinates = request.coordinates.toDto(),
             visitTime = request.visitTime,
             workingHours = request.workingHours,
             isActive = request.isActive,
@@ -187,7 +188,7 @@ class MockPointService : PointService {
     override fun uploadPointMedia(
         pointId: Long,
         file: MultipartFile,
-        request: AdminUploadPointMediaRequest,
+        request: AdminUploadPointMediaCommand,
     ): AdminPointMediaItem {
         getPointDetail(pointId)
         val fileName = file.originalFilename ?: "upload.bin"

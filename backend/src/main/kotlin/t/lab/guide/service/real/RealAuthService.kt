@@ -7,14 +7,14 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import t.lab.guide.dto.auth.AuthRequest
 import t.lab.guide.dto.auth.AuthResponse
-import t.lab.guide.dto.auth.ChangePasswordRequest
-import t.lab.guide.dto.auth.LogoutRequest
-import t.lab.guide.dto.auth.RefreshRequest
-import t.lab.guide.dto.auth.RegistrationRequest
 import t.lab.guide.dto.auth.RegistrationResponse
 import t.lab.guide.dto.auth.TokenPairResponse
+import t.lab.guide.dto.auth.command.AuthCommand
+import t.lab.guide.dto.auth.command.ChangePasswordCommand
+import t.lab.guide.dto.auth.command.LogoutCommand
+import t.lab.guide.dto.auth.command.RefreshCommand
+import t.lab.guide.dto.auth.command.RegistrationCommand
 import t.lab.guide.exception.ConflictException
 import t.lab.guide.exception.InternalServerException
 import t.lab.guide.mapper.toAppUserDetails
@@ -39,7 +39,7 @@ class RealAuthService(
     private val securityService: SecurityService,
 ) : AuthService {
     @Transactional
-    override fun registerUser(request: RegistrationRequest): RegistrationResponse {
+    override fun registerUser(request: RegistrationCommand): RegistrationResponse {
         if (userRepository.existsByEmail(request.email)) {
             throw ConflictException("This email or username is already taken")
         }
@@ -65,7 +65,7 @@ class RealAuthService(
         return savedNewUser.toRegistrationResponse(tokenPair)
     }
 
-    override fun authenticateUser(request: AuthRequest): AuthResponse {
+    override fun authenticateUser(request: AuthCommand): AuthResponse {
         val authRequest = UsernamePasswordAuthenticationToken(request.username, request.password)
         val auth = authenticationManager.authenticate(authRequest)
         val userDetails = auth.principal as AppUserDetails
@@ -81,12 +81,12 @@ class RealAuthService(
         return user.toAuthResponse(tokens)
     }
 
-    override fun logoutUser(request: LogoutRequest) {
+    override fun logoutUser(request: LogoutCommand) {
         jwtTokenService.revoke(request.refreshToken)
     }
 
     @Transactional
-    override fun changePassword(request: ChangePasswordRequest): TokenPairResponse {
+    override fun changePassword(request: ChangePasswordCommand): TokenPairResponse {
         val userId = securityService.getCurrentUserId()
         val userPassword =
             passwordRepository
@@ -117,7 +117,7 @@ class RealAuthService(
         return TokenPairResponse(accessToken = tokenPair.accessToken, refreshToken = tokenPair.refreshToken)
     }
 
-    override fun refreshToken(request: RefreshRequest): TokenPairResponse {
+    override fun refreshToken(request: RefreshCommand): TokenPairResponse {
         val tokenPair = jwtTokenService.rotate(request.refreshToken)
         return TokenPairResponse(accessToken = tokenPair.accessToken, refreshToken = tokenPair.refreshToken)
     }

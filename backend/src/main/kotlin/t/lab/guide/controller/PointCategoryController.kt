@@ -10,7 +10,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import t.lab.guide.dto.point.category.CategoryListResponse
+import t.lab.guide.dto.category.CategoryListResponse
 import t.lab.guide.service.PointCategoryService
 
 @Tag(name = "Categories", description = "Операции с категориями точек интереса")

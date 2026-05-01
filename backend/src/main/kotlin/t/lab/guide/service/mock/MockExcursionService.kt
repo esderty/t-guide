@@ -2,19 +2,19 @@ package t.lab.guide.service.mock
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
-import t.lab.guide.dto.admin.excursion.AdminCreatePrebuiltExcursionRequest
 import t.lab.guide.dto.admin.excursion.AdminExcursionDetailResponse
 import t.lab.guide.dto.admin.excursion.AdminExcursionPageResponse
 import t.lab.guide.dto.admin.excursion.AdminPatchPrebuiltExcursionRequest
+import t.lab.guide.dto.admin.excursion.command.AdminCreatePrebuiltExcursionCommand
 import t.lab.guide.dto.admin.point.AdminPointShortItem
 import t.lab.guide.dto.common.GeoPoint
-import t.lab.guide.dto.excursion.CreateCustomExcursionRequest
 import t.lab.guide.dto.excursion.ExcursionDetailResponse
 import t.lab.guide.dto.excursion.ExcursionListResponse
-import t.lab.guide.dto.excursion.ExcursionSearchRequest
 import t.lab.guide.dto.excursion.ExcursionShortItem
-import t.lab.guide.dto.excursion.SetExcursionPointsRequest
 import t.lab.guide.dto.excursion.UpdateCustomExcursionRequest
+import t.lab.guide.dto.excursion.command.CreateCustomExcursionCommand
+import t.lab.guide.dto.excursion.command.ExcursionSearchCommand
+import t.lab.guide.dto.excursion.command.SetExcursionPointsCommand
 import t.lab.guide.dto.point.PointListResponse
 import t.lab.guide.dto.point.PointShortItem
 import t.lab.guide.enums.AdminExcursionSortField
@@ -32,7 +32,7 @@ import java.time.OffsetDateTime
 class MockExcursionService(
     private val securityService: SecurityService,
 ) : ExcursionService {
-    override fun searchExcursions(request: ExcursionSearchRequest): ExcursionListResponse {
+    override fun searchExcursions(request: ExcursionSearchCommand): ExcursionListResponse {
         val categoryIds = request.categoryIds
         val visitTime = request.visitTime
 
@@ -53,7 +53,7 @@ class MockExcursionService(
         return ExcursionListResponse(mock.filter { it.routeType == ExcursionRouteType.CUSTOM })
     }
 
-    override fun createCustomExcursion(request: CreateCustomExcursionRequest): ExcursionDetailResponse {
+    override fun createCustomExcursion(request: CreateCustomExcursionCommand): ExcursionDetailResponse {
         securityService.getCurrentUserId()
         val template = mockDetail[0]
         return ExcursionDetailResponse(
@@ -95,7 +95,7 @@ class MockExcursionService(
 
     override fun setExcursionPoints(
         id: Long,
-        request: SetExcursionPointsRequest,
+        request: SetExcursionPointsCommand,
     ): ExcursionDetailResponse {
         securityService.getCurrentUserId()
         val template = mockDetail[0]
@@ -164,7 +164,7 @@ class MockExcursionService(
         return toAdminDetail(existing)
     }
 
-    override fun createPrebuiltExcursion(request: AdminCreatePrebuiltExcursionRequest): AdminExcursionDetailResponse {
+    override fun createPrebuiltExcursion(request: AdminCreatePrebuiltExcursionCommand): AdminExcursionDetailResponse {
         val template = mockDetail[0]
         val now = OffsetDateTime.now()
         return AdminExcursionDetailResponse(
@@ -195,7 +195,7 @@ class MockExcursionService(
             id = existing.id,
             ownerId = null,
             routeType = ExcursionRouteType.PREBUILT,
-            visibility = request.visibility ?: existing.visibility,
+            visibility = request.visibility?.let(ExcursionVisibility::valueOf) ?: existing.visibility,
             title = request.title ?: existing.title,
             description = request.description ?: existing.description,
             shortDescription = request.shortDescription ?: existing.shortDescription,
@@ -211,7 +211,7 @@ class MockExcursionService(
 
     override fun setAdminExcursionPoints(
         id: Long,
-        request: SetExcursionPointsRequest,
+        request: SetExcursionPointsCommand,
     ): AdminExcursionDetailResponse {
         val existing = getExcursionDetail(id)
         val now = OffsetDateTime.now()

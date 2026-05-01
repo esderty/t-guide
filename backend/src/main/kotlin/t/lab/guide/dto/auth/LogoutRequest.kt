@@ -9,7 +9,8 @@ data class LogoutRequest(
         description = "Токен обновления",
         requiredMode = Schema.RequiredMode.REQUIRED,
         example = "dGhpcy1pcz1hLXJlZnJlc2gtdG9rZW4uLi4=...",
+        nullable = false,
     )
     @field:NotBlank(message = "поле обязательно!")
-    val refreshToken: String,
+    val refreshToken: String? = null,
 )

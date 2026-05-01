@@ -11,18 +11,20 @@ data class AuthRequest(
         requiredMode = Schema.RequiredMode.REQUIRED,
         maxLength = 50,
         example = "enzolu",
+        nullable = true,
     )
     @field:NotBlank(message = "поле обязательно!")
     @field:Size(max = 50, message = "максимальная длина 50 символов!")
-    val username: String,
+    val username: String? = null,
     @Schema(
         description = "Пароль для входа в систему",
         requiredMode = Schema.RequiredMode.REQUIRED,
         minLength = 8,
         maxLength = 64,
         example = "securePassword123",
+        nullable = true,
     )
     @field:NotBlank(message = "поле обязательно!")
     @field:Size(min = 8, max = 64, message = "длина должна быть от 8 до 64 символов")
-    val password: String,
+    val password: String? = null,
 )

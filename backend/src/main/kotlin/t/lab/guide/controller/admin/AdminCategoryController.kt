@@ -21,8 +21,9 @@ import org.springframework.web.bind.annotation.RestController
 import t.lab.guide.dto.ApiErrorResponse
 import t.lab.guide.dto.admin.category.AdminCreateCategoryRequest
 import t.lab.guide.dto.admin.category.AdminPatchCategoryRequest
-import t.lab.guide.dto.point.category.CategoryItem
-import t.lab.guide.dto.point.category.CategoryListResponse
+import t.lab.guide.dto.admin.category.command.toCommand
+import t.lab.guide.dto.category.CategoryItem
+import t.lab.guide.dto.category.CategoryListResponse
 import t.lab.guide.service.PointCategoryService
 
 @Tag(name = "Admin Categories", description = "Управление категориями точек интереса")
@@ -93,7 +94,7 @@ class AdminCategoryController(
     fun createCategory(
         @Valid @RequestBody request: AdminCreateCategoryRequest,
     ): ResponseEntity<CategoryItem> {
-        val response = pointCategoryService.createCategory(request)
+        val response = pointCategoryService.createCategory(request.toCommand())
         return ResponseEntity.ok(response)
     }
 

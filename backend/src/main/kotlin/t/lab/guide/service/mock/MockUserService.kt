@@ -39,7 +39,7 @@ class MockUserService(
             username = request.username ?: "username$userId",
             email = request.email ?: "user$userId@example.com",
             name = request.name ?: "User $userId",
-            lang = request.lang ?: UserLanguage.RU,
+            lang = request.lang?.let(UserLanguage::valueOf) ?: UserLanguage.RU,
             role = UserRole.USER,
         )
     }
@@ -106,7 +106,7 @@ class MockUserService(
             username = request.username ?: "username$userId",
             email = request.email ?: "user$userId@example.com",
             name = "User $userId",
-            lang = request.lang ?: UserLanguage.RU,
+            lang = request.lang?.let(UserLanguage::valueOf) ?: UserLanguage.RU,
             role = request.role ?: role,
             isActive = request.isActive ?: isActive,
             createdAt = OffsetDateTime.now().minusDays(userId),

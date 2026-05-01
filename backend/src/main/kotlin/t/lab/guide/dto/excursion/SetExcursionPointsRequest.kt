@@ -14,10 +14,11 @@ data class SetExcursionPointsRequest(
             Schema(
                 description = "Точки маршрута с явным порядком прохождения",
                 requiredMode = Schema.RequiredMode.REQUIRED,
+                nullable = false,
             ),
     )
     @field:NotEmpty(message = "поле обязательно!")
     @field:Size(min = 1, max = 25, message = "количество точек должно быть от 1 до 25!")
     @field:Valid
-    val points: List<ExcursionPointOrderItem>,
+    val points: List<ExcursionPointOrderItem>? = null,
 )

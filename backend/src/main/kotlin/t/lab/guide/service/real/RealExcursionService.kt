@@ -2,17 +2,17 @@ package t.lab.guide.service.real
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
-import t.lab.guide.dto.admin.excursion.AdminCreatePrebuiltExcursionRequest
 import t.lab.guide.dto.admin.excursion.AdminExcursionDetailResponse
 import t.lab.guide.dto.admin.excursion.AdminExcursionPageResponse
 import t.lab.guide.dto.admin.excursion.AdminPatchPrebuiltExcursionRequest
-import t.lab.guide.dto.excursion.CreateCustomExcursionRequest
+import t.lab.guide.dto.admin.excursion.command.AdminCreatePrebuiltExcursionCommand
 import t.lab.guide.dto.excursion.ExcursionDetailResponse
 import t.lab.guide.dto.excursion.ExcursionListResponse
-import t.lab.guide.dto.excursion.ExcursionSearchRequest
 import t.lab.guide.dto.excursion.ExcursionShortItem
-import t.lab.guide.dto.excursion.SetExcursionPointsRequest
 import t.lab.guide.dto.excursion.UpdateCustomExcursionRequest
+import t.lab.guide.dto.excursion.command.CreateCustomExcursionCommand
+import t.lab.guide.dto.excursion.command.ExcursionSearchCommand
+import t.lab.guide.dto.excursion.command.SetExcursionPointsCommand
 import t.lab.guide.enums.AdminExcursionSortField
 import t.lab.guide.enums.SortDirection
 import t.lab.guide.service.ExcursionService
@@ -20,7 +20,7 @@ import t.lab.guide.service.ExcursionService
 @Service
 @Profile("!demo")
 class RealExcursionService : ExcursionService {
-    override fun searchExcursions(request: ExcursionSearchRequest): ExcursionListResponse {
+    override fun searchExcursions(request: ExcursionSearchCommand): ExcursionListResponse {
         TODO("Not yet implemented")
     }
 
@@ -32,7 +32,7 @@ class RealExcursionService : ExcursionService {
         TODO("Not yet implemented")
     }
 
-    override fun createCustomExcursion(request: CreateCustomExcursionRequest): ExcursionDetailResponse {
+    override fun createCustomExcursion(request: CreateCustomExcursionCommand): ExcursionDetailResponse {
         TODO("Not yet implemented")
     }
 
@@ -45,7 +45,7 @@ class RealExcursionService : ExcursionService {
 
     override fun setExcursionPoints(
         id: Long,
-        request: SetExcursionPointsRequest,
+        request: SetExcursionPointsCommand,
     ): ExcursionDetailResponse {
         TODO("Not yet implemented")
     }
@@ -80,7 +80,7 @@ class RealExcursionService : ExcursionService {
         TODO("Not yet implemented")
     }
 
-    override fun createPrebuiltExcursion(request: AdminCreatePrebuiltExcursionRequest): AdminExcursionDetailResponse {
+    override fun createPrebuiltExcursion(request: AdminCreatePrebuiltExcursionCommand): AdminExcursionDetailResponse {
         TODO("Not yet implemented")
     }
 
@@ -93,7 +93,7 @@ class RealExcursionService : ExcursionService {
 
     override fun setAdminExcursionPoints(
         id: Long,
-        request: SetExcursionPointsRequest,
+        request: SetExcursionPointsCommand,
     ): AdminExcursionDetailResponse {
         TODO("Not yet implemented")
     }

@@ -19,6 +19,7 @@ import t.lab.guide.dto.ApiErrorResponse
 import t.lab.guide.dto.point.PointDetailResponse
 import t.lab.guide.dto.point.PointListResponse
 import t.lab.guide.dto.point.PointSearchRequest
+import t.lab.guide.dto.point.command.toCommand
 import t.lab.guide.service.PointService
 
 @Tag(name = "Points", description = "Операции с точками интереса")
@@ -49,7 +50,7 @@ class PointController(
     fun searchPoints(
         @Valid @RequestBody request: PointSearchRequest,
     ): ResponseEntity<PointListResponse> {
-        val response: PointListResponse = pointService.searchPoints(request)
+        val response: PointListResponse = pointService.searchPoints(request.toCommand())
         return ResponseEntity.ok(response)
     }
 

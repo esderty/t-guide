@@ -11,15 +11,17 @@ data class AdminCreateCategoryRequest(
         requiredMode = Schema.RequiredMode.REQUIRED,
         maxLength = 50,
         example = "Ресторан",
+        nullable = false,
     )
     @field:NotBlank(message = "Название категории обязательно")
     @field:Size(max = 50, message = "Название категории не может превышать 50 символов")
-    val name: String,
+    val name: String? = null,
     @Schema(
         description = "Уникальный человекочитаемый идентификатор категории для URL",
         requiredMode = Schema.RequiredMode.REQUIRED,
         maxLength = 50,
         example = "restaurant",
+        nullable = false,
     )
     @field:NotBlank(message = "Slug категории обязателен")
     @field:Size(max = 50, message = "Slug категории не может превышать 50 символов")
@@ -27,5 +29,5 @@ data class AdminCreateCategoryRequest(
         regexp = "^[a-z0-9]+(?:-[a-z0-9]+)*$",
         message = "slug должен состоять из строчных латинских букв, цифр и дефисов",
     )
-    val slug: String,
+    val slug: String? = null,
 )

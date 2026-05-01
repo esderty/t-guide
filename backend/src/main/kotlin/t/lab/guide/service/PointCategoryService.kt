@@ -1,14 +1,14 @@
 package t.lab.guide.service
 
-import t.lab.guide.dto.admin.category.AdminCreateCategoryRequest
 import t.lab.guide.dto.admin.category.AdminPatchCategoryRequest
-import t.lab.guide.dto.point.category.CategoryItem
-import t.lab.guide.dto.point.category.CategoryListResponse
+import t.lab.guide.dto.admin.category.command.AdminCreateCategoryCommand
+import t.lab.guide.dto.category.CategoryItem
+import t.lab.guide.dto.category.CategoryListResponse
 
 interface PointCategoryService {
     fun getAllCategories(): CategoryListResponse
 
-    fun createCategory(request: AdminCreateCategoryRequest): CategoryItem
+    fun createCategory(request: AdminCreateCategoryCommand): CategoryItem
 
     fun patchCategory(
         id: Long,

@@ -34,7 +34,7 @@ class AdminUserController(
 ) {
     @Operation(
         summary = "Список пользователей",
-        description = "Возвращает страницу пользователей с пагинацией, сортировкой и текстовым поиском по username/email/name. Доступно только администратору.",
+        description = "Возвращает страницу пользователей с пагинацией, сортировкой и текстовым поиском",
         security = [SecurityRequirement(name = "bearerAuth")],
     )
     @ApiResponses(
@@ -99,7 +99,7 @@ class AdminUserController(
 
     @Operation(
         summary = "Обновить пользователя",
-        description = "Частично обновляет данные пользователя от имени администратора (роль, статус активности, основные поля). Передаются только изменяемые поля.",
+        description = "Частично обновляет данные пользователя от имени администратора.",
         security = [SecurityRequirement(name = "bearerAuth")],
     )
     @ApiResponses(

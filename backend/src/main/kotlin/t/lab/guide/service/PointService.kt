@@ -1,20 +1,20 @@
 package t.lab.guide.service
 
 import org.springframework.web.multipart.MultipartFile
-import t.lab.guide.dto.admin.point.AdminCreatePointRequest
 import t.lab.guide.dto.admin.point.AdminPatchPointRequest
 import t.lab.guide.dto.admin.point.AdminPointDetailResponse
 import t.lab.guide.dto.admin.point.AdminPointMediaItem
 import t.lab.guide.dto.admin.point.AdminPointPageResponse
-import t.lab.guide.dto.admin.point.AdminUploadPointMediaRequest
+import t.lab.guide.dto.admin.point.command.AdminCreatePointCommand
+import t.lab.guide.dto.admin.point.command.AdminUploadPointMediaCommand
 import t.lab.guide.dto.point.PointDetailResponse
 import t.lab.guide.dto.point.PointListResponse
-import t.lab.guide.dto.point.PointSearchRequest
+import t.lab.guide.dto.point.command.PointSearchCommand
 import t.lab.guide.enums.AdminPointSortField
 import t.lab.guide.enums.SortDirection
 
 interface PointService {
-    fun searchPoints(request: PointSearchRequest): PointListResponse
+    fun searchPoints(request: PointSearchCommand): PointListResponse
 
     fun getPointDetail(id: Long): PointDetailResponse
 
@@ -28,7 +28,7 @@ interface PointService {
 
     fun getAdminPointDetail(id: Long): AdminPointDetailResponse
 
-    fun createPoint(request: AdminCreatePointRequest): AdminPointDetailResponse
+    fun createPoint(request: AdminCreatePointCommand): AdminPointDetailResponse
 
     fun patchPoint(
         id: Long,
@@ -40,7 +40,7 @@ interface PointService {
     fun uploadPointMedia(
         pointId: Long,
         file: MultipartFile,
-        request: AdminUploadPointMediaRequest,
+        request: AdminUploadPointMediaCommand,
     ): AdminPointMediaItem
 
     fun deletePointMedia(

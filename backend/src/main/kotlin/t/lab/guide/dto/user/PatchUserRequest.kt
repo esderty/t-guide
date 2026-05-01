@@ -6,9 +6,10 @@ import jakarta.validation.constraints.AssertTrue
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.Size
 import t.lab.guide.enums.UserLanguage
+import t.lab.guide.validation.ValidEnum
 
 @Schema(
-    description = "Данные для частичного обновления информации о пользователе. Все поля необязательные, при их наличии будут обновлены соответствующие данные пользователя.",
+    description = "Данные для частичного обновления информации о пользователе.",
 )
 data class PatchUserRequest(
     @Schema(
@@ -41,7 +42,10 @@ data class PatchUserRequest(
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
         example = "RU",
     )
-    val lang: UserLanguage? = null,
+    @field:ValidEnum(
+        enumClass = UserLanguage::class,
+    )
+    val lang: String? = null,
 ) {
     @AssertTrue(message = "Хотя бы одно поле должно быть заполнено для обновления")
     @JsonIgnore

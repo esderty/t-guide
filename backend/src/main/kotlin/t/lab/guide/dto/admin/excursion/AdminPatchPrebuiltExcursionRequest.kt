@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.AssertTrue
 import jakarta.validation.constraints.Size
 import t.lab.guide.enums.ExcursionVisibility
+import t.lab.guide.validation.ValidEnum
 
 @Schema(
     description =
@@ -38,7 +39,10 @@ data class AdminPatchPrebuiltExcursionRequest(
     @field:Size(max = 255, message = "максимальная длина краткого описания 255 символов")
     val shortDescription: String? = null,
     @Schema(description = "Новая видимость экскурсии (PUBLIC, PRIVATE)", example = "PUBLIC", nullable = true)
-    val visibility: ExcursionVisibility? = null,
+    @field:ValidEnum(
+        enumClass = ExcursionVisibility::class,
+    )
+    val visibility: String? = null,
 ) {
     @AssertTrue(message = "Необходимо передать хотя бы одно поле для обновления")
     @JsonIgnore

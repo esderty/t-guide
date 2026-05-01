@@ -33,6 +33,7 @@ import t.lab.guide.dto.admin.point.AdminPointDetailResponse
 import t.lab.guide.dto.admin.point.AdminPointMediaItem
 import t.lab.guide.dto.admin.point.AdminPointPageResponse
 import t.lab.guide.dto.admin.point.AdminUploadPointMediaRequest
+import t.lab.guide.dto.admin.point.command.toCommand
 import t.lab.guide.enums.AdminPointSortField
 import t.lab.guide.enums.SortDirection
 import t.lab.guide.service.PointService
@@ -163,7 +164,7 @@ class AdminPointController(
     fun createPoint(
         @Valid @RequestBody request: AdminCreatePointRequest,
     ): ResponseEntity<AdminPointDetailResponse> {
-        val response: AdminPointDetailResponse = pointService.createPoint(request)
+        val response: AdminPointDetailResponse = pointService.createPoint(request.toCommand())
         return ResponseEntity.ok(response)
     }
 
@@ -279,7 +280,7 @@ class AdminPointController(
         @Parameter(description = "Файл медиа-материала (фото, видео, аудио)") @RequestPart("file") file: MultipartFile,
         @Valid @RequestPart("metadata") metadata: AdminUploadPointMediaRequest,
     ): ResponseEntity<AdminPointMediaItem> {
-        val response: AdminPointMediaItem = pointService.uploadPointMedia(pointId, file, metadata)
+        val response: AdminPointMediaItem = pointService.uploadPointMedia(pointId, file, metadata.toCommand())
         return ResponseEntity.ok(response)
     }
 

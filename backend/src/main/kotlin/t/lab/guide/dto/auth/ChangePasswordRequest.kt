@@ -12,18 +12,20 @@ data class ChangePasswordRequest(
         minLength = 8,
         maxLength = 64,
         example = "currentPassword123",
+        nullable = false,
     )
     @field:NotBlank(message = "поле обязательно!")
     @field:Size(min = 8, max = 64, message = "длина должна быть от 8 до 64 символов")
-    val oldPassword: String,
+    val oldPassword: String? = null,
     @Schema(
         description = "Новый пароль пользователя",
         requiredMode = Schema.RequiredMode.REQUIRED,
         minLength = 8,
         maxLength = 64,
         example = "newSecurePassword123",
+        nullable = false,
     )
     @field:NotBlank(message = "поле обязательно!")
     @field:Size(min = 8, max = 64, message = "длина должна быть от 8 до 64 символов")
-    val newPassword: String,
+    val newPassword: String? = null,
 )
