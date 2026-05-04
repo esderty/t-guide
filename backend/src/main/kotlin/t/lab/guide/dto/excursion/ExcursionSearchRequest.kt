@@ -38,7 +38,7 @@ data class ExcursionSearchRequest(
                 requiredMode = Schema.RequiredMode.NOT_REQUIRED,
             ),
     )
-    val categoryIds: List<Long> = emptyList(),
+    val categoryIds: List<Long>? = emptyList(),
     @Schema(
         description = "Желаемое время экскурсии в минутах. Используется для подбора маршрута по времени",
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,

@@ -22,7 +22,7 @@ fun ExcursionSearchRequest.toCommand(): ExcursionSearchCommand =
     ExcursionSearchCommand(
         location = this.location?.toCommand() ?: throw BadRequestException("Поле 'location' обязательно"),
         radiusKilometers = this.radiusKilometers ?: throw BadRequestException("Поле 'radiusKilometers' обязательно"),
-        categoryIds = this.categoryIds,
+        categoryIds = this.categoryIds ?: emptyList(),
         visitTime = this.visitTime,
     )
 
