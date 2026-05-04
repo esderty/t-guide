@@ -43,4 +43,12 @@ data class ExcursionShortItem(
         schema = Schema(description = "Идентификатор категории", example = "1"),
     )
     val categoryIds: List<Long>,
+    @Schema(
+        description = "Средний рейтинг экскурсии по отзывам пользователей (null при отсутствии отзывов)",
+        example = "4.5",
+        nullable = true,
+    )
+    val rating: Double?,
+    @Schema(description = "Количество активных отзывов на экскурсию", example = "12")
+    val reviewsCount: Int,
 )

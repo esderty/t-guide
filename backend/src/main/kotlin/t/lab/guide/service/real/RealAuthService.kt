@@ -41,10 +41,10 @@ class RealAuthService(
     @Transactional
     override fun registerUser(request: RegistrationCommand): RegistrationResponse {
         if (userRepository.existsByEmail(request.email)) {
-            throw ConflictException("This email or username is already taken")
+            throw ConflictException("Email или имя пользователя уже заняты")
         }
         if (userRepository.existsByUsername(request.username)) {
-            throw ConflictException("This email or username is already taken")
+            throw ConflictException("Email или имя пользователя уже заняты")
         }
 
         val newUser = request.toUser()
@@ -74,7 +74,7 @@ class RealAuthService(
             userRepository
                 .findUserProfileById(userDetails.id)
                 ?: throw InternalServerException(
-                    "User not found with id ${userDetails.id} after authentication. Try again or contact support",
+                    "Пользователь с id=${userDetails.id} не найден после аутентификации. Попробуйте ещё раз или обратитесь в поддержку",
                 )
 
         val tokens = jwtTokenService.issueTokens(userDetails)
@@ -91,14 +91,14 @@ class RealAuthService(
         val userPassword =
             passwordRepository
                 .findById(userId)
-                .orElseThrow { InternalServerException("Password record not found for user. Try again or contact support") }
+                .orElseThrow { InternalServerException("Запись о пароле пользователя не найдена. Попробуйте ещё раз или обратитесь в поддержку") }
 
         if (!passwordEncoder.matches(request.oldPassword, userPassword.passwordHash)) {
-            throw BadCredentialsException("Current password is incorrect")
+            throw BadCredentialsException("Неверный текущий пароль")
         }
         val newEncodedPassword = encodePassword(request.newPassword)
         if (newEncodedPassword == userPassword.passwordHash) {
-            throw BadCredentialsException("New password must be different from the old password")
+            throw BadCredentialsException("Новый пароль должен отличаться от старого")
         }
         val newUserPassword = userPassword.copy(passwordHash = newEncodedPassword)
         passwordRepository.save(newUserPassword)
@@ -108,7 +108,7 @@ class RealAuthService(
                 .findLoginViewByUserId(userId)
                 ?.toAppUserDetails()
                 ?: throw InternalServerException(
-                    "User not found with id $userId after password change. Try again or contact support",
+                    "Пользователь с id=$userId не найден после смены пароля. Попробуйте ещё раз или обратитесь в поддержку",
                 )
 
         jwtTokenService.revokeAllUserTokens(userId)
@@ -124,5 +124,5 @@ class RealAuthService(
 
     private fun encodePassword(password: String): String =
         passwordEncoder.encode(password)
-            ?: throw InternalServerException("Failed to encode new password. Try again or contact support")
+            ?: throw InternalServerException("Не удалось закодировать новый пароль. Попробуйте ещё раз или обратитесь в поддержку")
 }

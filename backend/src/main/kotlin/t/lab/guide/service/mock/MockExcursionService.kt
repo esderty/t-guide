@@ -6,21 +6,28 @@ import t.lab.guide.dto.admin.excursion.AdminExcursionDetailResponse
 import t.lab.guide.dto.admin.excursion.AdminExcursionPageResponse
 import t.lab.guide.dto.admin.excursion.AdminPatchPrebuiltExcursionRequest
 import t.lab.guide.dto.admin.excursion.command.AdminCreatePrebuiltExcursionCommand
+import t.lab.guide.dto.admin.excursion.command.AdminExcursionPageQueryCommand
 import t.lab.guide.dto.admin.point.AdminPointShortItem
 import t.lab.guide.dto.common.GeoPoint
+import t.lab.guide.dto.excursion.CustomExcursionsPageQuery
 import t.lab.guide.dto.excursion.ExcursionDetailResponse
 import t.lab.guide.dto.excursion.ExcursionListResponse
+import t.lab.guide.dto.excursion.ExcursionReviewListResponse
+import t.lab.guide.dto.excursion.ExcursionReviewResponse
 import t.lab.guide.dto.excursion.ExcursionShortItem
+import t.lab.guide.dto.excursion.FavoriteExcursionsPageQuery
+import t.lab.guide.dto.excursion.PatchExcursionReview
 import t.lab.guide.dto.excursion.UpdateCustomExcursionRequest
+import t.lab.guide.dto.excursion.UserCustomExcursionPageResponse
+import t.lab.guide.dto.excursion.UserFavoriteExcursionPageResponse
 import t.lab.guide.dto.excursion.command.CreateCustomExcursionCommand
+import t.lab.guide.dto.excursion.command.ExcursionAddReviewCommand
 import t.lab.guide.dto.excursion.command.ExcursionSearchCommand
 import t.lab.guide.dto.excursion.command.SetExcursionPointsCommand
 import t.lab.guide.dto.point.PointListResponse
 import t.lab.guide.dto.point.PointShortItem
-import t.lab.guide.enums.AdminExcursionSortField
 import t.lab.guide.enums.ExcursionRouteType
 import t.lab.guide.enums.ExcursionVisibility
-import t.lab.guide.enums.SortDirection
 import t.lab.guide.exception.NotFoundException
 import t.lab.guide.service.ExcursionService
 import t.lab.guide.service.SecurityService
@@ -48,9 +55,16 @@ class MockExcursionService(
         mockDetail.firstOrNull { it.id == id }
             ?: throw NotFoundException("Экскурсия с id=$id не найдена")
 
-    override fun getUserCustomExcursions(): ExcursionListResponse {
+    override fun getUserCustomExcursions(query: CustomExcursionsPageQuery): UserCustomExcursionPageResponse {
         securityService.getCurrentUserId()
-        return ExcursionListResponse(mock.filter { it.routeType == ExcursionRouteType.CUSTOM })
+        val items = mock.filter { it.routeType == ExcursionRouteType.CUSTOM }
+        return UserCustomExcursionPageResponse(
+            excursions = items,
+            page = query.page,
+            size = query.size,
+            totalElements = items.size.toLong(),
+            totalPages = if (query.size <= 0) 0 else ((items.size + query.size - 1) / query.size),
+        )
     }
 
     override fun createCustomExcursion(request: CreateCustomExcursionCommand): ExcursionDetailResponse {
@@ -68,6 +82,8 @@ class MockExcursionService(
             durationMin = template.durationMin,
             coordinates = template.coordinates,
             points = template.points,
+            rating = null,
+            reviewsCount = 0,
         )
     }
 
@@ -90,6 +106,8 @@ class MockExcursionService(
             pointsCount = template.pointsCount,
             coordinates = template.coordinates,
             categoryIds = template.categoryIds,
+            rating = template.rating,
+            reviewsCount = template.reviewsCount,
         )
     }
 
@@ -111,6 +129,8 @@ class MockExcursionService(
             durationMin = template.durationMin,
             coordinates = template.coordinates,
             points = template.points,
+            rating = template.rating,
+            reviewsCount = template.reviewsCount,
         )
     }
 
@@ -118,9 +138,16 @@ class MockExcursionService(
         securityService.getCurrentUserId()
     }
 
-    override fun getUserFavoriteExcursions(): ExcursionListResponse {
+    override fun getUserFavoriteExcursions(query: FavoriteExcursionsPageQuery): UserFavoriteExcursionPageResponse {
         securityService.getCurrentUserId()
-        return ExcursionListResponse(mock.subList(2, 3))
+        val items = mock.subList(2, 3)
+        return UserFavoriteExcursionPageResponse(
+            excursions = items,
+            page = query.page,
+            size = query.size,
+            totalElements = items.size.toLong(),
+            totalPages = if (query.size <= 0) 0 else ((items.size + query.size - 1) / query.size),
+        )
     }
 
     override fun favoriteExcursion(excursionId: Long) {
@@ -132,28 +159,24 @@ class MockExcursionService(
     }
 
     override fun getAdminExcursionsPage(
-        page: Int,
-        size: Int,
-        sortBy: AdminExcursionSortField?,
-        sortDirection: SortDirection?,
-        search: String?,
+        query: AdminExcursionPageQueryCommand,
     ): AdminExcursionPageResponse {
         val filtered =
             mock.filter {
-                search.isNullOrBlank() || it.title.lowercase().contains(search.lowercase())
+                query.search.isNullOrBlank() || it.title.lowercase().contains(query.search.lowercase())
             }
 
         val totalElements = filtered.size
-        val totalPages = if (size > 0) ((totalElements + size - 1) / size) else 0
+        val totalPages = if (query.size > 0) ((totalElements + query.size - 1) / query.size) else 0
 
-        val fromIndex = minOf(page * size, totalElements)
-        val toIndex = minOf(fromIndex + size, totalElements)
+        val fromIndex = minOf(query.page * query.size, totalElements)
+        val toIndex = minOf(fromIndex + query.size, totalElements)
         val pageContent = filtered.subList(fromIndex, toIndex)
 
         return AdminExcursionPageResponse(
             excursions = pageContent,
-            page = page,
-            size = size,
+            page = query.page,
+            size = query.size,
             totalElements = totalElements.toLong(),
             totalPages = totalPages,
         )
@@ -182,6 +205,8 @@ class MockExcursionService(
             createdBy = 1L,
             createdAt = now,
             updatedAt = now,
+            rating = null,
+            reviewsCount = 0,
         )
     }
 
@@ -206,6 +231,8 @@ class MockExcursionService(
             createdBy = 1L,
             createdAt = now.minusDays(30),
             updatedAt = now,
+            rating = existing.rating,
+            reviewsCount = existing.reviewsCount,
         )
     }
 
@@ -230,12 +257,74 @@ class MockExcursionService(
             createdBy = 1L,
             createdAt = now.minusDays(30),
             updatedAt = now,
+            rating = existing.rating,
+            reviewsCount = existing.reviewsCount,
         )
     }
 
     override fun deleteExcursion(id: Long) {
         mockDetail.firstOrNull { it.id == id }
             ?: throw NotFoundException("Экскурсия с id=$id не найдена")
+    }
+
+    override fun addReview(
+        excursionId: Long,
+        command: ExcursionAddReviewCommand,
+    ): ExcursionReviewResponse {
+        val userId = securityService.getCurrentUserId()
+        getExcursionDetail(excursionId)
+        return ExcursionReviewResponse(
+            id = 1L,
+            excursionId = excursionId,
+            userId = userId,
+            rating = command.rating,
+            reviewText = command.reviewText,
+            visitDate = command.visitDate,
+        )
+    }
+
+    override fun patchOwnReview(
+        excursionId: Long,
+        request: PatchExcursionReview,
+    ): ExcursionReviewResponse {
+        val userId = securityService.getCurrentUserId()
+        getExcursionDetail(excursionId)
+        return ExcursionReviewResponse(
+            id = 1L,
+            excursionId = excursionId,
+            userId = userId,
+            rating = request.rating ?: 5,
+            reviewText = request.reviewText ?: "Отличная экскурсия",
+            visitDate =
+                request.visitDate ?: java.time.LocalDate
+                    .now()
+                    .minusDays(1),
+        )
+    }
+
+    override fun deleteOwnReview(excursionId: Long) {
+        securityService.getCurrentUserId()
+        getExcursionDetail(excursionId)
+    }
+
+    override fun getReviews(excursionId: Long): ExcursionReviewListResponse {
+        getExcursionDetail(excursionId)
+        return ExcursionReviewListResponse(
+            reviews =
+                listOf(
+                    ExcursionReviewResponse(
+                        id = 1L,
+                        excursionId = excursionId,
+                        userId = 42L,
+                        rating = 5,
+                        reviewText = "Очень понравилось!",
+                        visitDate =
+                            java.time.LocalDate
+                                .now()
+                                .minusDays(7),
+                    ),
+                ),
+        )
     }
 
     private fun toAdminDetail(source: ExcursionDetailResponse): AdminExcursionDetailResponse {
@@ -255,6 +344,8 @@ class MockExcursionService(
             createdBy = 1L,
             createdAt = now.minusDays(30),
             updatedAt = now,
+            rating = source.rating,
+            reviewsCount = source.reviewsCount,
         )
     }
 
@@ -304,6 +395,8 @@ class MockExcursionService(
                     pointsCount = 5,
                     coordinates = GeoPoint(BigDecimal("55.753544"), BigDecimal("37.621202")),
                     categoryIds = listOf(1L, 2L, 3L),
+                    rating = 4.7,
+                    reviewsCount = 128,
                 ),
                 ExcursionShortItem(
                     id = 2L,
@@ -318,6 +411,8 @@ class MockExcursionService(
                     pointsCount = 4,
                     coordinates = GeoPoint(BigDecimal("55.741426"), BigDecimal("37.620137")),
                     categoryIds = listOf(3L),
+                    rating = 4.5,
+                    reviewsCount = 64,
                 ),
                 ExcursionShortItem(
                     id = 3L,
@@ -332,6 +427,8 @@ class MockExcursionService(
                     pointsCount = 6,
                     coordinates = GeoPoint(BigDecimal("55.729812"), BigDecimal("37.601348")),
                     categoryIds = listOf(4L),
+                    rating = 4.8,
+                    reviewsCount = 92,
                 ),
                 ExcursionShortItem(
                     id = 4L,
@@ -346,6 +443,8 @@ class MockExcursionService(
                     pointsCount = 5,
                     coordinates = GeoPoint(BigDecimal("55.764804"), BigDecimal("37.604392")),
                     categoryIds = listOf(5L),
+                    rating = 4.2,
+                    reviewsCount = 17,
                 ),
                 ExcursionShortItem(
                     id = 5L,
@@ -360,6 +459,8 @@ class MockExcursionService(
                     pointsCount = 3,
                     coordinates = GeoPoint(BigDecimal("55.757500"), BigDecimal("37.618000")),
                     categoryIds = listOf(1L, 2L),
+                    rating = null,
+                    reviewsCount = 0,
                 ),
             )
 
@@ -408,6 +509,8 @@ class MockExcursionService(
                                 ),
                             ),
                         ),
+                    rating = 4.7,
+                    reviewsCount = 128,
                 ),
                 ExcursionDetailResponse(
                     id = 2L,
@@ -443,6 +546,8 @@ class MockExcursionService(
                                 ),
                             ),
                         ),
+                    rating = 4.5,
+                    reviewsCount = 64,
                 ),
                 ExcursionDetailResponse(
                     id = 3L,
@@ -487,6 +592,8 @@ class MockExcursionService(
                                 ),
                             ),
                         ),
+                    rating = 4.8,
+                    reviewsCount = 92,
                 ),
                 ExcursionDetailResponse(
                     id = 4L,
@@ -522,6 +629,8 @@ class MockExcursionService(
                                 ),
                             ),
                         ),
+                    rating = 4.2,
+                    reviewsCount = 17,
                 ),
                 ExcursionDetailResponse(
                     id = 5L,
@@ -566,6 +675,8 @@ class MockExcursionService(
                                 ),
                             ),
                         ),
+                    rating = null,
+                    reviewsCount = 0,
                 ),
             )
     }

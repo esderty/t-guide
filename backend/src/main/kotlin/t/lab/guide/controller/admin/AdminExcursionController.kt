@@ -9,8 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
-import jakarta.validation.constraints.Max
-import jakarta.validation.constraints.Min
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -21,18 +20,16 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import t.lab.guide.dto.ApiErrorResponse
 import t.lab.guide.dto.admin.excursion.AdminCreatePrebuiltExcursionRequest
 import t.lab.guide.dto.admin.excursion.AdminExcursionDetailResponse
+import t.lab.guide.dto.admin.excursion.AdminExcursionPageQuery
 import t.lab.guide.dto.admin.excursion.AdminExcursionPageResponse
 import t.lab.guide.dto.admin.excursion.AdminPatchPrebuiltExcursionRequest
 import t.lab.guide.dto.admin.excursion.command.toCommand
 import t.lab.guide.dto.excursion.SetExcursionPointsRequest
 import t.lab.guide.dto.excursion.command.toCommand
-import t.lab.guide.enums.AdminExcursionSortField
-import t.lab.guide.enums.SortDirection
 import t.lab.guide.service.ExcursionService
 
 @Tag(name = "Admin Excursions", description = "Управление готовыми экскурсиями")
@@ -73,26 +70,10 @@ class AdminExcursionController(
     )
     @GetMapping("/page")
     fun getExcursionsPage(
-        @Parameter(description = "Номер страницы (с 0)", example = "0") @RequestParam(defaultValue = "0") @Min(0) page: Int,
-        @Parameter(
-            description = "Размер страницы",
-            example = "25",
-        ) @RequestParam(defaultValue = "25") @Min(0) @Max(100) size: Int,
-        @Parameter(
-            description = "Поле для сортировки (например, id, title, createdAt)",
-            example = "createdAt",
-        ) @RequestParam(required = false) sortBy: AdminExcursionSortField?,
-        @Parameter(
-            description = "Направление сортировки: ASC или DESC",
-            example = "DESC",
-        ) @RequestParam(required = false) sortDirection: SortDirection?,
-        @Parameter(
-            description = "Строка поиска по названию",
-            example = "центр",
-        ) @RequestParam(required = false) search: String?,
+        @ParameterObject @Valid query: AdminExcursionPageQuery,
     ): ResponseEntity<AdminExcursionPageResponse> {
         val response: AdminExcursionPageResponse =
-            excursionService.getAdminExcursionsPage(page, size, sortBy, sortDirection, search)
+            excursionService.getAdminExcursionsPage(query.toCommand())
         return ResponseEntity.ok(response)
     }
 

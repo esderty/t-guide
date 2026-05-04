@@ -4,9 +4,9 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import t.lab.guide.dto.admin.user.AdminPatchUserRequest
 import t.lab.guide.dto.admin.user.AdminUserDetailResponse
-import t.lab.guide.dto.admin.user.AdminUserPageQuery
 import t.lab.guide.dto.admin.user.AdminUserPageResponse
 import t.lab.guide.dto.admin.user.AdminUserShortItem
+import t.lab.guide.dto.admin.user.command.AdminUserPageQueryCommand
 import t.lab.guide.dto.user.PatchUserRequest
 import t.lab.guide.dto.user.UserResponse
 import t.lab.guide.enums.UserLanguage
@@ -44,7 +44,7 @@ class MockUserService(
         )
     }
 
-    override fun getUsersPage(query: AdminUserPageQuery): AdminUserPageResponse {
+    override fun getUsersPage(query: AdminUserPageQueryCommand): AdminUserPageResponse {
         val totalElements = 531L
         val totalPages =
             if (query.size == 0) {

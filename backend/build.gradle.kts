@@ -22,6 +22,7 @@ repositories {
 
 dependencies {
     implementation(platform(libs.spring.boot.dependencies))
+    implementation(platform(libs.spring.cloud.aws.dependencies))
     implementation(libs.spring.boot.starter.data.jdbc)
     implementation(libs.spring.boot.starter.security)
     implementation(libs.spring.security.oauth2.jose)
@@ -30,6 +31,7 @@ dependencies {
     implementation(libs.kotlin.reflect)
     implementation(libs.spring.boot.starter.actuator)
     implementation(libs.spring.boot.starter.flyway)
+    implementation(libs.spring.cloud.aws.starter.s3)
     implementation(libs.flyway.database.postgresql)
     implementation(libs.spring.boot.starter.data.redis)
     implementation(libs.bcprov.jdk18on)

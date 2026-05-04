@@ -38,7 +38,7 @@ class GlobalExceptionHandler {
                 fe.field to (fe.defaultMessage ?: "invalid")
             }
         logClientError(HttpStatus.BAD_REQUEST, request.requestURI, errors.toString())
-        return build(HttpStatus.BAD_REQUEST, "Validation failed", errors)
+        return build(HttpStatus.BAD_REQUEST, "Ошибка валидации", errors)
     }
 
     @ExceptionHandler(ConstraintViolationException::class)
@@ -51,7 +51,7 @@ class GlobalExceptionHandler {
                 cv.propertyPath.toString() to (cv.message ?: "invalid")
             }
         logClientError(HttpStatus.BAD_REQUEST, request.requestURI, errors.toString())
-        return build(HttpStatus.BAD_REQUEST, "Validation failed", errors)
+        return build(HttpStatus.BAD_REQUEST, "Ошибка валидации", errors)
     }
 
     @ExceptionHandler(BadCredentialsException::class)
@@ -60,7 +60,7 @@ class GlobalExceptionHandler {
         request: HttpServletRequest,
     ): ResponseEntity<ApiErrorResponse> {
         logClientError(HttpStatus.UNAUTHORIZED, request.requestURI, e.message)
-        return build(HttpStatus.UNAUTHORIZED, "Invalid credentials", emptyMap())
+        return build(HttpStatus.UNAUTHORIZED, "Неверные учётные данные", emptyMap())
     }
 
     @ExceptionHandler(JwtException::class)
@@ -69,7 +69,7 @@ class GlobalExceptionHandler {
         request: HttpServletRequest,
     ): ResponseEntity<ApiErrorResponse> {
         logClientError(HttpStatus.UNAUTHORIZED, request.requestURI, e.message)
-        return build(HttpStatus.UNAUTHORIZED, "Invalid or expired token", emptyMap())
+        return build(HttpStatus.UNAUTHORIZED, "Недействительный или просроченный токен", emptyMap())
     }
 
     @ExceptionHandler(DisabledException::class)
@@ -78,13 +78,13 @@ class GlobalExceptionHandler {
         request: HttpServletRequest,
     ): ResponseEntity<ApiErrorResponse> {
         logClientError(HttpStatus.FORBIDDEN, request.requestURI, e.message)
-        return build(HttpStatus.FORBIDDEN, "Account is disabled", emptyMap())
+        return build(HttpStatus.FORBIDDEN, "Аккаунт отключён", emptyMap())
     }
 
     @ExceptionHandler(NoResourceFoundException::class)
     fun handleNotFound(request: HttpServletRequest): ResponseEntity<ApiErrorResponse> {
-        logClientError(HttpStatus.NOT_FOUND, request.requestURI, "Resource not found")
-        return build(HttpStatus.NOT_FOUND, "Resource not found", emptyMap())
+        logClientError(HttpStatus.NOT_FOUND, request.requestURI, "Ресурс не найден")
+        return build(HttpStatus.NOT_FOUND, "Ресурс не найден", emptyMap())
     }
 
     @ExceptionHandler(Exception::class)
@@ -93,7 +93,7 @@ class GlobalExceptionHandler {
         request: HttpServletRequest,
     ): ResponseEntity<ApiErrorResponse> {
         log.error("Unexpected error: {}", request.requestURI, e)
-        return build(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred", emptyMap())
+        return build(HttpStatus.INTERNAL_SERVER_ERROR, "Произошла непредвиденная ошибка", emptyMap())
     }
 
     private fun logClientError(

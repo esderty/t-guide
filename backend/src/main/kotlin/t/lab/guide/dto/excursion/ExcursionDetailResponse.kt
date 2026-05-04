@@ -38,4 +38,12 @@ data class ExcursionDetailResponse(
     val coordinates: GeoPoint,
     @Schema(description = "Список точек интереса, входящих в маршрут экскурсии")
     val points: PointListResponse,
+    @Schema(
+        description = "Средний рейтинг экскурсии по отзывам пользователей (null при отсутствии отзывов)",
+        example = "4.5",
+        nullable = true,
+    )
+    val rating: Double?,
+    @Schema(description = "Количество активных отзывов на экскурсию", example = "12")
+    val reviewsCount: Int,
 )

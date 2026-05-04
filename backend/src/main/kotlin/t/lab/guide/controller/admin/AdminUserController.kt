@@ -23,6 +23,7 @@ import t.lab.guide.dto.admin.user.AdminPatchUserRequest
 import t.lab.guide.dto.admin.user.AdminUserDetailResponse
 import t.lab.guide.dto.admin.user.AdminUserPageQuery
 import t.lab.guide.dto.admin.user.AdminUserPageResponse
+import t.lab.guide.dto.admin.user.command.toCommand
 import t.lab.guide.service.UserService
 
 @Validated
@@ -61,7 +62,7 @@ class AdminUserController(
     @GetMapping("/page")
     fun getUsersPage(
         @ParameterObject @Valid query: AdminUserPageQuery,
-    ): ResponseEntity<AdminUserPageResponse> = ResponseEntity.ok(userService.getUsersPage(query))
+    ): ResponseEntity<AdminUserPageResponse> = ResponseEntity.ok(userService.getUsersPage(query.toCommand()))
 
     @Operation(
         summary = "Детали пользователя",

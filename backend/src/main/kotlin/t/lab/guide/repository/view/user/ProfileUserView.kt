@@ -1,4 +1,4 @@
-package t.lab.guide.repository.view
+package t.lab.guide.repository.view.user
 
 import t.lab.guide.enums.UserLanguage
 import t.lab.guide.enums.UserRole

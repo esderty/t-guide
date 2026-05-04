@@ -49,8 +49,18 @@ class SecurityConfig {
                     ).hasRole("ADMIN")
                     .requestMatchers(
                         HttpMethod.GET,
-                        "/excursions/**",
-                        "/points/**",
+                        "/excursions/my",
+                        "/excursions/favorites",
+                    ).authenticated()
+                    .requestMatchers(
+                        HttpMethod.GET,
+                        "/excursions/*",
+                        "/excursions/*/reviews",
+                        "/points/*",
+                    ).permitAll()
+                    .requestMatchers(
+                        "/excursions/search",
+                        "/points/search",
                     ).permitAll()
                     .requestMatchers(
                         "/auth/**",
@@ -63,10 +73,10 @@ class SecurityConfig {
                     .authenticated()
             }.exceptionHandling { eh ->
                 eh.authenticationEntryPoint { _, response, _ ->
-                    writeError(response, objectMapper, HttpStatus.UNAUTHORIZED, "Authentication required")
+                    writeError(response, objectMapper, HttpStatus.UNAUTHORIZED, "Требуется авторизация")
                 }
                 eh.accessDeniedHandler { _, response, _ ->
-                    writeError(response, objectMapper, HttpStatus.FORBIDDEN, "Access denied")
+                    writeError(response, objectMapper, HttpStatus.FORBIDDEN, "Доступ запрещён")
                 }
             }.addFilterBefore(
                 JwtAuthenticationFilter(jwtDecoder, jwtProperties),

@@ -57,4 +57,12 @@ data class AdminExcursionDetailResponse(
     val createdAt: OffsetDateTime,
     @Schema(description = "Дата и время последнего обновления экскурсии", example = "2024-01-15T12:00:00Z")
     val updatedAt: OffsetDateTime,
+    @Schema(
+        description = "Средний рейтинг экскурсии по отзывам пользователей (null при отсутствии отзывов)",
+        example = "4.5",
+        nullable = true,
+    )
+    val rating: Double?,
+    @Schema(description = "Количество активных отзывов на экскурсию", example = "12")
+    val reviewsCount: Int,
 )

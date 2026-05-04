@@ -2,8 +2,8 @@ package t.lab.guide.service
 
 import t.lab.guide.dto.admin.user.AdminPatchUserRequest
 import t.lab.guide.dto.admin.user.AdminUserDetailResponse
-import t.lab.guide.dto.admin.user.AdminUserPageQuery
 import t.lab.guide.dto.admin.user.AdminUserPageResponse
+import t.lab.guide.dto.admin.user.command.AdminUserPageQueryCommand
 import t.lab.guide.dto.user.PatchUserRequest
 import t.lab.guide.dto.user.UserResponse
 
@@ -12,7 +12,7 @@ interface UserService {
 
     fun patchUser(request: PatchUserRequest): UserResponse
 
-    fun getUsersPage(query: AdminUserPageQuery): AdminUserPageResponse
+    fun getUsersPage(query: AdminUserPageQueryCommand): AdminUserPageResponse
 
     fun getUserDetail(userId: Long): AdminUserDetailResponse
 

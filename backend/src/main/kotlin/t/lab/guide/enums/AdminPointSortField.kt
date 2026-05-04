@@ -3,6 +3,7 @@ package t.lab.guide.enums
 enum class AdminPointSortField(
     val value: String,
 ) {
-    CATEGORY("category"),
+    ID("id"),
+    CREATED_AT("created_at"),
     TITLE("title"),
 }

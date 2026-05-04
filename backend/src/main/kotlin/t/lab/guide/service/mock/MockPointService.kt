@@ -9,6 +9,7 @@ import t.lab.guide.dto.admin.point.AdminPointMediaItem
 import t.lab.guide.dto.admin.point.AdminPointPageResponse
 import t.lab.guide.dto.admin.point.AdminPointShortItem
 import t.lab.guide.dto.admin.point.command.AdminCreatePointCommand
+import t.lab.guide.dto.admin.point.command.AdminPointPageQueryCommand
 import t.lab.guide.dto.admin.point.command.AdminUploadPointMediaCommand
 import t.lab.guide.dto.category.CategoryItem
 import t.lab.guide.dto.common.GeoPoint
@@ -18,9 +19,7 @@ import t.lab.guide.dto.point.PointListResponse
 import t.lab.guide.dto.point.PointMediaItem
 import t.lab.guide.dto.point.PointShortItem
 import t.lab.guide.dto.point.command.PointSearchCommand
-import t.lab.guide.enums.AdminPointSortField
 import t.lab.guide.enums.MediaType
-import t.lab.guide.enums.SortDirection
 import t.lab.guide.exception.NotFoundException
 import t.lab.guide.service.PointService
 import java.math.BigDecimal
@@ -30,17 +29,17 @@ import java.time.OffsetDateTime
 @Profile("demo")
 class MockPointService : PointService {
     override fun searchPoints(request: PointSearchCommand): PointListResponse {
-        val categorySlugs = request.categorySlugs
+        val categoryIds = request.categoryIds
         val maxVisitTime = request.visitTime
         val filterIds =
-            if (categorySlugs.isEmpty()) {
+            if (categoryIds.isEmpty()) {
                 emptyList()
             } else {
-                categories.filter { it.slug in categorySlugs }.map { it.id }
+                categories.filter { it.id in categoryIds }.map { it.id }
             }
         val filtered =
             mock
-                .filter { categorySlugs.isEmpty() || it.categoryId in filterIds }
+                .filter { categoryIds.isEmpty() || it.categoryId in filterIds }
                 .filter { maxVisitTime == null || (it.visitTime ?: 0) <= maxVisitTime }
         return PointListResponse(filtered)
     }
@@ -50,15 +49,11 @@ class MockPointService : PointService {
             ?: throw NotFoundException("Точка с id=$id не найдена")
 
     override fun getPointsPage(
-        page: Int,
-        size: Int,
-        sortBy: AdminPointSortField?,
-        sortDirection: SortDirection?,
-        search: String?,
+        query: AdminPointPageQueryCommand,
     ): AdminPointPageResponse {
         val totalElements = 247L
-        val safePage = page.coerceAtLeast(0)
-        val safeSize = size.coerceIn(0, 100)
+        val safePage = query.page
+        val safeSize = query.size
         val totalPages =
             if (safeSize == 0) {
                 0
@@ -100,7 +95,6 @@ class MockPointService : PointService {
             detail.media.mapIndexed { i, m ->
                 AdminPointMediaItem(
                     id = (i + 1).toLong(),
-                    pointId = detail.id,
                     url = m.url,
                     type = m.type,
                     sortOrder = m.sortOrder,
@@ -195,7 +189,6 @@ class MockPointService : PointService {
         val mockUrl = "https://cdn.t-guide.mock/points/$pointId/$fileName"
         return AdminPointMediaItem(
             id = System.currentTimeMillis(),
-            pointId = pointId,
             url = mockUrl,
             type = request.type,
             sortOrder = request.sortOrder ?: 0,

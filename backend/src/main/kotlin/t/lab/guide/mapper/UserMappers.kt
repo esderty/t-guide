@@ -2,8 +2,10 @@ package t.lab.guide.mapper
 
 import t.lab.guide.domain.User
 import t.lab.guide.dto.admin.user.AdminUserDetailResponse
+import t.lab.guide.dto.admin.user.AdminUserShortItem
 import t.lab.guide.dto.user.UserResponse
-import t.lab.guide.repository.view.ProfileUserView
+import t.lab.guide.repository.view.user.AdminUserShortView
+import t.lab.guide.repository.view.user.ProfileUserView
 
 fun User.toUserResponse(): UserResponse =
     UserResponse(
@@ -36,4 +38,14 @@ fun User.toAdminUserDetailResponse(): AdminUserDetailResponse =
         isActive = isActive,
         createdAt = createdAt!!,
         updatedAt = updatedAt!!,
+    )
+
+fun AdminUserShortView.toAdminUserShortItem(): AdminUserShortItem =
+    AdminUserShortItem(
+        id = id,
+        username = username,
+        email = email,
+        role = role,
+        isActive = isActive,
+        createdAt = createdAt,
     )

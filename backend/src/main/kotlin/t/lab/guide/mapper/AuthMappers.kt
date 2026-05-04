@@ -6,8 +6,8 @@ import t.lab.guide.dto.auth.AuthResponse
 import t.lab.guide.dto.auth.RegistrationResponse
 import t.lab.guide.dto.auth.command.RegistrationCommand
 import t.lab.guide.enums.UserRole
-import t.lab.guide.repository.view.LoginUserView
-import t.lab.guide.repository.view.ProfileUserView
+import t.lab.guide.repository.view.user.LoginUserView
+import t.lab.guide.repository.view.user.ProfileUserView
 import t.lab.guide.security.AppUserDetails
 import t.lab.guide.security.TokenPair
 

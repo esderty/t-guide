@@ -7,16 +7,17 @@ import org.springframework.stereotype.Service
 import t.lab.guide.domain.User
 import t.lab.guide.dto.admin.user.AdminPatchUserRequest
 import t.lab.guide.dto.admin.user.AdminUserDetailResponse
-import t.lab.guide.dto.admin.user.AdminUserPageQuery
 import t.lab.guide.dto.admin.user.AdminUserPageResponse
+import t.lab.guide.dto.admin.user.command.AdminUserPageQueryCommand
 import t.lab.guide.dto.user.PatchUserRequest
 import t.lab.guide.dto.user.UserResponse
-import t.lab.guide.enums.AdminUserSortField
 import t.lab.guide.enums.SortDirection
 import t.lab.guide.enums.UserLanguage
+import t.lab.guide.exception.ConflictException
 import t.lab.guide.exception.InternalServerException
 import t.lab.guide.exception.NotFoundException
 import t.lab.guide.mapper.toAdminUserDetailResponse
+import t.lab.guide.mapper.toAdminUserShortItem
 import t.lab.guide.mapper.toUserResponse
 import t.lab.guide.repository.UserRepository
 import t.lab.guide.service.SecurityService
@@ -32,7 +33,7 @@ class RealUserService(
         val userId = securityService.getCurrentUserId()
         val user =
             userRepository.findUserProfileById(userId)
-                ?: throw InternalServerException("Current user does not exist")
+                ?: throw InternalServerException("Текущий пользователь не найден")
         return user.toUserResponse()
     }
 
@@ -42,12 +43,12 @@ class RealUserService(
 
         request.email?.takeIf { it != currentUser.email }?.let {
             if (userRepository.existsByEmail(it)) {
-                throw InternalServerException("User with email '$it' already exists")
+                throw InternalServerException("Пользователь с email '$it' уже существует")
             }
         }
         request.username?.takeIf { it != currentUser.username }?.let {
             if (userRepository.existsByUsername(it)) {
-                throw InternalServerException("User with email '$it' already exists")
+                throw InternalServerException("Пользователь с email '$it' уже существует")
             }
         }
 
@@ -62,20 +63,19 @@ class RealUserService(
         return userRepository.save(updatedUser).toUserResponse()
     }
 
-    override fun getUsersPage(query: AdminUserPageQuery): AdminUserPageResponse {
+    override fun getUsersPage(query: AdminUserPageQueryCommand): AdminUserPageResponse {
         val safeSearch = query.search?.trim()?.takeIf { it.isNotEmpty() }
 
-        val sortColumn = (query.sortBy ?: AdminUserSortField.CREATED_AT).value
         val direction =
             if (query.sortDirection == SortDirection.ASC) Sort.Direction.ASC else Sort.Direction.DESC
-        val pageable = PageRequest.of(query.page, query.size, Sort.by(direction, sortColumn))
+        val pageable = PageRequest.of(query.page, query.size, Sort.by(direction, query.sortBy.value))
 
         val users = userRepository.findUsersPage(safeSearch, pageable)
-        val total = userRepository.countUsers(safeSearch)
-        val totalPages = if (query.size == 0) 0 else ((total + query.size - 1) / query.size).toInt()
+        val total = userRepository.countUsersInPage(safeSearch)
+        val totalPages = ((total + query.size - 1) / query.size).toInt()
 
         return AdminUserPageResponse(
-            users = users,
+            users = users.map { it.toAdminUserShortItem() },
             page = query.page,
             size = query.size,
             totalElements = total,
@@ -97,12 +97,12 @@ class RealUserService(
 
         request.email?.takeIf { it != currentUser.email }?.let {
             if (userRepository.existsByEmail(it)) {
-                throw InternalServerException("User with email '$it' already exists")
+                throw ConflictException("Пользователь с email '$it' уже существует")
             }
         }
         request.username?.takeIf { it != currentUser.username }?.let {
             if (userRepository.existsByUsername(it)) {
-                throw InternalServerException("User with email '$it' already exists")
+                throw ConflictException("Пользователь с username '$it' уже существует")
             }
         }
 
@@ -123,5 +123,5 @@ class RealUserService(
     fun getUserById(userId: Long): User =
         userRepository
             .findById(userId)
-            .orElseThrow { NotFoundException("User $userId not found") }
+            .orElseThrow { NotFoundException("Пользователь с id=$userId не найден") }
 }

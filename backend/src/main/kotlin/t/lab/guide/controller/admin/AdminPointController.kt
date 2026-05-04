@@ -9,9 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
-import jakarta.validation.constraints.Max
-import jakarta.validation.constraints.Min
-import jakarta.validation.constraints.Size
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
@@ -22,7 +20,6 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RequestPart
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
@@ -31,11 +28,10 @@ import t.lab.guide.dto.admin.point.AdminCreatePointRequest
 import t.lab.guide.dto.admin.point.AdminPatchPointRequest
 import t.lab.guide.dto.admin.point.AdminPointDetailResponse
 import t.lab.guide.dto.admin.point.AdminPointMediaItem
+import t.lab.guide.dto.admin.point.AdminPointPageQuery
 import t.lab.guide.dto.admin.point.AdminPointPageResponse
 import t.lab.guide.dto.admin.point.AdminUploadPointMediaRequest
 import t.lab.guide.dto.admin.point.command.toCommand
-import t.lab.guide.enums.AdminPointSortField
-import t.lab.guide.enums.SortDirection
 import t.lab.guide.service.PointService
 
 @Tag(name = "Admin Points", description = "Управление точками интереса")
@@ -73,22 +69,9 @@ class AdminPointController(
     )
     @GetMapping("/page")
     fun getPointsPage(
-        @Parameter(description = "Номер страницы (с 0)", example = "0") @RequestParam(defaultValue = "0") @Min(0) page: Int,
-        @Parameter(description = "Размер страницы", example = "25") @RequestParam(defaultValue = "25") @Min(1) @Max(100) size: Int,
-        @Parameter(
-            description = "Поле для сортировки (например, id, title, createdAt)",
-            example = "createdAt",
-        ) @RequestParam(required = false) sortBy: AdminPointSortField?,
-        @Parameter(
-            description = "Направление сортировки: ASC или DESC",
-            example = "DESC",
-        ) @RequestParam(required = false) sortDirection: SortDirection?,
-        @Parameter(
-            description = "Строка поиска по title",
-            example = "площадь",
-        ) @RequestParam(required = false) @Size(max = 100) search: String?,
+        @ParameterObject @Valid query: AdminPointPageQuery,
     ): ResponseEntity<AdminPointPageResponse> {
-        val response: AdminPointPageResponse = pointService.getPointsPage(page, size, sortBy, sortDirection, search)
+        val response: AdminPointPageResponse = pointService.getPointsPage(query.toCommand())
         return ResponseEntity.ok(response)
     }
 

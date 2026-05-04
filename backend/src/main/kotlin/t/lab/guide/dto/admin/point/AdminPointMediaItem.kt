@@ -8,8 +8,6 @@ import java.time.OffsetDateTime
 data class AdminPointMediaItem(
     @Schema(description = "Уникальный идентификатор медиа-материала", example = "10")
     val id: Long,
-    @Schema(description = "Идентификатор точки, к которому относится media")
-    val pointId: Long,
     @Schema(
         description = "Ссылка на медиа-файл",
         example = "https://cdn.t-guide.mock/points/1/photo-1.jpg",

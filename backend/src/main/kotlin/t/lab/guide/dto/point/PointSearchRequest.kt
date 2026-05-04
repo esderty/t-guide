@@ -31,14 +31,14 @@ data class PointSearchRequest(
     @field:Max(value = 15, message = "радиус должен быть не больше 15 километров!")
     val radiusKilometers: Int? = null,
     @ArraySchema(
-        schema = Schema(description = "Slug категории точки", example = "attraction"),
+        schema = Schema(description = "ID категории точки", example = "attraction"),
         arraySchema =
             Schema(
-                description = "Фильтр по slug категорий. Если не задан или пуст — возвращаются точки всех категорий",
+                description = "Фильтр по id категорий. Если не задан или пуст — возвращаются точки всех категорий",
                 requiredMode = Schema.RequiredMode.NOT_REQUIRED,
             ),
     )
-    val categorySlugs: List<String> = emptyList(),
+    val categoryIds: List<Long> = emptyList(),
     @Schema(
         description = "Желаемое время посещения точек в минутах.",
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,

@@ -3,10 +3,11 @@ package t.lab.guide.repository
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jdbc.repository.query.Query
 import org.springframework.data.repository.CrudRepository
+import org.springframework.data.repository.query.Param
 import t.lab.guide.domain.User
-import t.lab.guide.dto.admin.user.AdminUserShortItem
-import t.lab.guide.repository.view.LoginUserView
-import t.lab.guide.repository.view.ProfileUserView
+import t.lab.guide.repository.view.user.AdminUserShortView
+import t.lab.guide.repository.view.user.LoginUserView
+import t.lab.guide.repository.view.user.ProfileUserView
 
 interface UserRepository : CrudRepository<User, Long> {
     @Query(
@@ -47,19 +48,20 @@ interface UserRepository : CrudRepository<User, Long> {
       """,
     )
     fun findUsersPage(
-        search: String?,
+        @Param("search") search: String?,
         pageable: Pageable,
-    ): List<AdminUserShortItem>
+    ): List<AdminUserShortView>
 
     @Query(
         """
       select count(*) from "user" u
       where (:search is null or u.username ilike '%' || :search || '%'
-                            or u.email    ilike '%' || :search || '%'
-                            or u.name     ilike '%' || :search || '%')
+                            or u.email    ilike '%' || :search || '%')
       """,
     )
-    fun countUsers(search: String?): Long
+    fun countUsersInPage(
+        @Param("search") search: String?,
+    ): Long
 
     fun existsByUsername(username: String): Boolean
 

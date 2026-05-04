@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -21,12 +22,20 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import t.lab.guide.dto.ApiErrorResponse
 import t.lab.guide.dto.excursion.CreateCustomExcursionRequest
+import t.lab.guide.dto.excursion.CustomExcursionsPageQuery
+import t.lab.guide.dto.excursion.ExcursionAddReviewRequest
 import t.lab.guide.dto.excursion.ExcursionDetailResponse
 import t.lab.guide.dto.excursion.ExcursionListResponse
+import t.lab.guide.dto.excursion.ExcursionReviewListResponse
+import t.lab.guide.dto.excursion.ExcursionReviewResponse
 import t.lab.guide.dto.excursion.ExcursionSearchRequest
 import t.lab.guide.dto.excursion.ExcursionShortItem
+import t.lab.guide.dto.excursion.FavoriteExcursionsPageQuery
+import t.lab.guide.dto.excursion.PatchExcursionReview
 import t.lab.guide.dto.excursion.SetExcursionPointsRequest
 import t.lab.guide.dto.excursion.UpdateCustomExcursionRequest
+import t.lab.guide.dto.excursion.UserCustomExcursionPageResponse
+import t.lab.guide.dto.excursion.UserFavoriteExcursionPageResponse
 import t.lab.guide.dto.excursion.command.toCommand
 import t.lab.guide.service.ExcursionService
 
@@ -108,8 +117,10 @@ class ExcursionController(
         ],
     )
     @GetMapping("/my")
-    fun getUserCustomExcursions(): ResponseEntity<ExcursionListResponse> =
-        ResponseEntity.ok(excursionService.getUserCustomExcursions())
+    fun getUserCustomExcursions(
+        @ParameterObject @Valid query: CustomExcursionsPageQuery,
+    ): ResponseEntity<UserCustomExcursionPageResponse> =
+        ResponseEntity.ok(excursionService.getUserCustomExcursions(query))
 
     @Operation(
         summary = "Создать кастомную экскурсию",
@@ -285,9 +296,11 @@ class ExcursionController(
         ],
     )
     @GetMapping("/favorites")
-    fun getFavorites(): ResponseEntity<ExcursionListResponse> =
+    fun getFavorites(
+        @ParameterObject @Valid query: FavoriteExcursionsPageQuery,
+    ): ResponseEntity<UserFavoriteExcursionPageResponse> =
         ResponseEntity.ok(
-            excursionService.getUserFavoriteExcursions(),
+            excursionService.getUserFavoriteExcursions(query),
         )
 
     @Operation(
@@ -350,5 +363,143 @@ class ExcursionController(
     ): ResponseEntity<Void> {
         excursionService.unfavoriteExcursion(excursionId)
         return ResponseEntity.noContent().build()
+    }
+
+    @Operation(
+        summary = "Оставить отзыв на экскурсию",
+        description = "Создаёт новый отзыв текущего пользователя на экскурсию. Один пользователь может оставить только один отзыв на экскурсию.",
+        security = [SecurityRequirement(name = "bearerAuth")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Отзыв успешно добавлен",
+                content = [Content(schema = Schema(implementation = ExcursionReviewResponse::class))],
+            ),
+            ApiResponse(
+                responseCode = "400",
+                description = "Некорректные данные запроса",
+                content = [Content(schema = Schema(implementation = ApiErrorResponse::class))],
+            ),
+            ApiResponse(
+                responseCode = "401",
+                description = "Пользователь не авторизован",
+                content = [Content(schema = Schema(implementation = ApiErrorResponse::class))],
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "Экскурсия не найдена",
+                content = [Content(schema = Schema(implementation = ApiErrorResponse::class))],
+            ),
+            ApiResponse(
+                responseCode = "409",
+                description = "Отзыв на экскурсию уже оставлен",
+                content = [Content(schema = Schema(implementation = ApiErrorResponse::class))],
+            ),
+        ],
+    )
+    @PostMapping("/{excursionId}/review")
+    fun addReviewExcursion(
+        @Parameter(description = "Идентификатор экскурсии", example = "1") @PathVariable excursionId: Long,
+        @Valid @RequestBody request: ExcursionAddReviewRequest,
+    ): ResponseEntity<ExcursionReviewResponse> {
+        val response: ExcursionReviewResponse = excursionService.addReview(excursionId, request.toCommand())
+        return ResponseEntity.ok(response)
+    }
+
+    @Operation(
+        summary = "Изменить свой отзыв",
+        description = "Частично обновляет свой отзыв на экскурсию. Передаются только изменяемые поля; минимум одно поле обязательно.",
+        security = [SecurityRequirement(name = "bearerAuth")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Отзыв успешно обновлён",
+                content = [Content(schema = Schema(implementation = ExcursionReviewResponse::class))],
+            ),
+            ApiResponse(
+                responseCode = "400",
+                description = "Некорректные данные запроса",
+                content = [Content(schema = Schema(implementation = ApiErrorResponse::class))],
+            ),
+            ApiResponse(
+                responseCode = "401",
+                description = "Пользователь не авторизован",
+                content = [Content(schema = Schema(implementation = ApiErrorResponse::class))],
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "Отзыв не найден",
+                content = [Content(schema = Schema(implementation = ApiErrorResponse::class))],
+            ),
+        ],
+    )
+    @PatchMapping("/{excursionId}/review")
+    fun patchOwnReview(
+        @Parameter(description = "Идентификатор экскурсии", example = "1") @PathVariable excursionId: Long,
+        @Valid @RequestBody request: PatchExcursionReview,
+    ): ResponseEntity<ExcursionReviewResponse> {
+        val response: ExcursionReviewResponse = excursionService.patchOwnReview(excursionId, request)
+        return ResponseEntity.ok(response)
+    }
+
+    @Operation(
+        summary = "Удалить свой отзыв",
+        description = "Удаляет свой отзыв на экскурсию.",
+        security = [SecurityRequirement(name = "bearerAuth")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "204",
+                description = "Отзыв успешно удалён",
+            ),
+            ApiResponse(
+                responseCode = "401",
+                description = "Пользователь не авторизован",
+                content = [Content(schema = Schema(implementation = ApiErrorResponse::class))],
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "Отзыв не найден",
+                content = [Content(schema = Schema(implementation = ApiErrorResponse::class))],
+            ),
+        ],
+    )
+    @DeleteMapping("/{excursionId}/review")
+    fun deleteOwnReview(
+        @Parameter(description = "Идентификатор экскурсии", example = "1") @PathVariable excursionId: Long,
+    ): ResponseEntity<Void> {
+        excursionService.deleteOwnReview(excursionId)
+        return ResponseEntity.noContent().build()
+    }
+
+    @Operation(
+        summary = "Получить отзывы на экскурсию",
+        description = "Возвращает список активных отзывов на экскурсию, отсортированных по дате создания (сначала новые).",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Список отзывов успешно получен",
+                content = [Content(schema = Schema(implementation = ExcursionReviewListResponse::class))],
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "Экскурсия не найдена",
+                content = [Content(schema = Schema(implementation = ApiErrorResponse::class))],
+            ),
+        ],
+    )
+    @GetMapping("/{excursionId}/reviews")
+    fun getReviews(
+        @Parameter(description = "Идентификатор экскурсии", example = "1") @PathVariable excursionId: Long,
+    ): ResponseEntity<ExcursionReviewListResponse> {
+        val response: ExcursionReviewListResponse = excursionService.getReviews(excursionId)
+        return ResponseEntity.ok(response)
     }
 }
